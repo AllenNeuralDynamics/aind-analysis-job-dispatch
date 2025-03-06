@@ -1,6 +1,6 @@
 # aind-analysis-job-dispatch
 
-This capsule will create the job input model for the analysis workflow. Currently, this only looks for nwb files for first order analysis. Required parameters and steps are below. 
+This capsule will create the job input model for the analysis workflow. Currently, this only looks for nwb files for first order analysis. Required parameters and steps are below. Capsule link: https://codeocean.allenneuraldynamics.org/capsule/9303168/tree
 
 ### Usage
 This script accepts several command-line arguments:
