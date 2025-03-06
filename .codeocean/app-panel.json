@@ -1,0 +1,49 @@
+{
+	"version": 1,
+	"named_parameters": true,
+	"parameters": [
+		{
+			"id": "zycyW7jdo3HsTFPs",
+			"name": "Name of analysis",
+			"param_name": "analysis_name",
+			"help_text": "The analysis to run on the input data",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "dXOMj5BgpkhMFqeT",
+			"name": "Version of analysis",
+			"param_name": "analysis_version",
+			"help_text": "The version of analysis that needs to be run",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "rqo1lFyT9EdfryOb",
+			"name": "Libraries to track",
+			"param_name": "analysis_libraries",
+			"description": "The libraries that will be used in the analysis ",
+			"help_text": "Pass in a list of strings. See default in app builder",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "PFmtTBxla46ZdhzZ",
+			"name": "Parameters for analysis",
+			"param_name": "analysis_parameters",
+			"description": "The parameters that the analysis will use",
+			"help_text": "Dictionary of parameters",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "EU0UKjCp5EVmm6fL",
+			"name": "Query ",
+			"param_name": "query",
+			"description": "The query to fetch data from the document database",
+			"help_text": "Query dictionary with fields to be specified",
+			"type": "text",
+			"value_type": "string"
+		}
+	]
+}

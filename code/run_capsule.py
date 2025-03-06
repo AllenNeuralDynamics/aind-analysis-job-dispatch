@@ -1,7 +1,46 @@
-""" top level run script """
+"""
+Generates the input analysis model from the user provided query
+"""
 
-def run():
-    """ basic run function """
-    pass
+from analysis_input_model import InputAnalysisModel, AnalysisSpec
+import pathlib
+import argparse
+import utils
+import json
 
-if __name__ == "__main__": run()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--query", type=str, default="")
+parser.add_argument("--analysis_name", type=str, default="")
+parser.add_argument("--analysis_version", type=str, default="")
+parser.add_argument("--analysis_libraries", type=str, default="")
+parser.add_argument("--analysis_parameters", type=str, default="")
+
+
+def write_input_model(query: str, analysis_spec: AnalysisSpec) -> None:
+    """
+    writes the input model with the s3 location from the query and input args for each path returned from the query
+    """
+    s3_paths = utils.get_s3_file_locations_from_docdb_query(query)
+    for path in s3_paths:
+        input_analysis_model = InputAnalysisModel(
+            s3_location=path, analysis_spec=analysis_spec
+        )
+        with open(
+            utils.RESULTS_PATH / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_input_analysis_model.json",
+            "w",
+        ) as f:
+            f.write(input_analysis_model.model_dump_json())
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    query = json.loads(args.query)
+    analysis_spec = AnalysisSpec(
+        analysis_name=args.analysis_name,
+        analysis_version=args.analysis_version,
+        analysis_libraries_to_track=json.loads(args.analysis_libraries),
+        analysis_parameters=json.loads(args.analysis_parameters),
+    )
+
+    write_input_model(query=query, analysis_spec=analysis_spec)
