@@ -17,7 +17,7 @@ parser.add_argument("--analysis_libraries", type=str, default="")
 parser.add_argument("--analysis_parameters", type=str, default="")
 
 
-def write_input_model(query: str, analysis_spec: AnalysisSpec) -> None:
+def write_input_model(query: dict, analysis_spec: AnalysisSpec) -> None:
     """
     writes the input model with the s3 location from the query and input args for each path returned from the query
     """
