@@ -27,7 +27,7 @@ def write_input_model(query: str, analysis_spec: AnalysisSpec) -> None:
             s3_location=path, analysis_spec=analysis_spec
         )
         with open(
-            utils.RESULTS_PATH / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_input_analysis_model.json",
+            utils.RESULTS_PATH / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
             "w",
         ) as f:
             f.write(input_analysis_model.model_dump_json())
