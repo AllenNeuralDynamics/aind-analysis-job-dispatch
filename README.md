@@ -18,7 +18,7 @@ This script accepts several command-line arguments:
 ```bash
 python script.py \
     --query '{"name": "experiment_12345"}' \
-    --analysis_name "Unit Yield" \
+    --analysis_name "Unit_Yield" \
     --analysis_version "0.1.0" \
     --analysis_libraries '["aind-ephys-utils"]' \
     --analysis_parameters '{"alpha": "0.1"}'
@@ -26,7 +26,7 @@ python script.py \
 
 ### Example Output File Content
 
-The content of the JSON file will look something like this:
+The content of the JSON file will look something like this (it will be saved as `file1_Unit_Yield_0.1.0.json`):
 
 ```json
 {
