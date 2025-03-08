@@ -1,6 +1,7 @@
 """
 Class that represents the input analysis job model
 """
+
 from pydantic import BaseModel, Field
 from typing import List
 

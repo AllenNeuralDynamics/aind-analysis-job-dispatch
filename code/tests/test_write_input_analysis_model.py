@@ -3,18 +3,18 @@ import unittest
 import pathlib
 import json
 
-import utils
-from run_capsule import write_input_model
-from analysis_input_model import AnalysisSpec, InputAnalysisModel
+from job_dispatch import utils
+from job_dispatch.run_capsule import write_input_model
+from job_dispatch.analysis_input_model import AnalysisSpec, InputAnalysisModel
 
 
 class TestWriteInputModel(unittest.TestCase):
     @patch(
-        "utils.get_s3_file_locations_from_docdb_query"
+        "job_dispatch.utils.get_s3_file_locations_from_docdb_query"
     )  # Mock get_s3_file_locations_from_docdb_query
     @patch("builtins.open", new_callable=mock_open)  # Mock the open function
     @patch(
-        "analysis_input_model.InputAnalysisModel.model_dump_json"
+        "job_dispatch.analysis_input_model.InputAnalysisModel.model_dump_json"
     )  # Mock model_dump_json
     def test_write_input_model(
         self,
@@ -57,7 +57,7 @@ class TestWriteInputModel(unittest.TestCase):
         # Check that the file write was called with the expected file path
         mock_open.assert_any_call(
             utils.RESULTS_PATH
-            / f"{pathlib.Path('s3://bucket/path/to/file1.nwb').stem}_input_analysis_model.json",
+            / f"{pathlib.Path('s3://bucket/path/to/file1.nwb').stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
             "w",
         )
 

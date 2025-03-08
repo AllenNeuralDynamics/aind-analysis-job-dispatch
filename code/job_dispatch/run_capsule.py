@@ -2,10 +2,10 @@
 Generates the input analysis model from the user provided query
 """
 
-from analysis_input_model import InputAnalysisModel, AnalysisSpec
+from job_dispatch.analysis_input_model import AnalysisSpec, InputAnalysisModel
 import pathlib
 import argparse
-import utils
+from job_dispatch import utils
 import json
 
 
@@ -26,8 +26,10 @@ def write_input_model(query: str, analysis_spec: AnalysisSpec) -> None:
         input_analysis_model = InputAnalysisModel(
             s3_location=path, analysis_spec=analysis_spec
         )
+        # saving hash as session_analysis-name_analysis-version, can modify based on feedback
         with open(
-            utils.RESULTS_PATH / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
+            utils.RESULTS_PATH
+            / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
             "w",
         ) as f:
             f.write(input_analysis_model.model_dump_json())

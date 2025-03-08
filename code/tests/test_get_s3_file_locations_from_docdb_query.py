@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
 import s3fs
-from utils import get_s3_file_locations_from_docdb_query
+from job_dispatch.utils import get_s3_file_locations_from_docdb_query
 
 
 class TestGetS3FileLocationsFromDocdbQuery(unittest.TestCase):
     @patch("s3fs.S3FileSystem")  # Mock s3fs.S3FileSystem
     @patch(
-        "utils.docdb_api_client.retrieve_docdb_records"
+        "job_dispatch.utils.docdb_api_client.retrieve_docdb_records"
     )  # Mock docdb_api_client.retrieve_docdb_records
     def test_get_s3_file_locations(self, mock_retrieve_docdb_records, MockS3FileSystem):
         # Setup mock return values
