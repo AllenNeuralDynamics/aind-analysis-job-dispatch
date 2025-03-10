@@ -1,0 +1,26 @@
+name: Lint and run tests
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.9' ]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies and run checks
+      working-directory: ./code
+      run: | 
+        python -m pip install -e .[dev]
+        flake8 . && interrogate --verbose .
+        coverage run -m unittest discover && coverage report
