@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aind-analysis-job-dispatch"
-description = "Package to define and run a Code Ocean Pipeline Monitor Job"
+description = "Package to define an analysis input model fetching input data on S3 from document database"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 authors = [
