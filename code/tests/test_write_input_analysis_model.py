@@ -1,11 +1,11 @@
-from unittest.mock import patch, mock_open
-import unittest
-import pathlib
 import json
+import pathlib
+import unittest
+from unittest.mock import mock_open, patch
 
 from job_dispatch import utils
+from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
 from job_dispatch.run_capsule import write_input_model
-from job_dispatch.analysis_input_model import AnalysisSpec, InputAnalysisModel
 
 
 class TestWriteInputModel(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestWriteInputModel(unittest.TestCase):
         query = {
             "name": "behavior_769038_2025-02-10_13-16-09_processed_2025-02-11_07-14-26"
         }
-        analysis_spec = AnalysisSpec(
+        analysis_spec = AnalysisSpecification(
             analysis_name="Unit Yield",
             analysis_version="0.1.0",
             analysis_libraries_to_track=["aind-ephys_utils"],

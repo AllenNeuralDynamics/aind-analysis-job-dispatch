@@ -1,6 +1,7 @@
-from aind_data_access_api.document_db import MetadataDbClient
-import s3fs
 import pathlib
+
+import s3fs
+from aind_data_access_api.document_db import MetadataDbClient
 
 RESULTS_PATH = pathlib.Path("/results")
 
@@ -20,6 +21,21 @@ def get_s3_file_locations_from_docdb_query(
 ) -> list[str]:
     """
     Returns list of s3 locations, looking for the file extension, from the given docdb query
+
+    Parameters
+    ----------
+    query : dict
+        A dictionary representing the query to retrieve records from the document database. 
+        The query typically contains a filter to search for specific documents.
+    
+    file_extension : str, optional
+        The file extension to filter for when searching the S3 locations. Default is "nwb".
+
+    Returns
+    -------
+    list of str
+        A list of S3 file locations (URLs) that match the query and the specified file extension. 
+        Each location is prefixed with "s3://".
     """
     s3_paths = []
     s3_file_system = s3fs.S3FileSystem()
@@ -27,11 +43,8 @@ def get_s3_file_locations_from_docdb_query(
         filter_query=query, projection={"location": 1}
     )
     for record in response:
-        # only looking for nwb files for now, and this assumes the following directory structure where the nwb will be found.
-        # another assumption is only 1 nwb file per record in processed data - think this is ok for now
-        # might have to modify this based on feedback
         file_path = tuple(
-            s3_file_system.glob(f"{record['location']}/*/*.{file_extension}")
+            s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
         )
         if file_path:
             s3_paths.append(f"s3://{file_path[0]}")

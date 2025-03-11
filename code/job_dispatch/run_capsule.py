@@ -2,26 +2,62 @@
 Generates the input analysis model from the user provided query
 """
 
-from job_dispatch.analysis_input_model import AnalysisSpec, InputAnalysisModel
-import pathlib
 import argparse
-from job_dispatch import utils
 import json
+import pathlib
+
+from job_dispatch import utils
+from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--query", type=str, default="")
-parser.add_argument("--analysis_name", type=str, default="")
-parser.add_argument("--analysis_version", type=str, default="")
-parser.add_argument("--analysis_libraries", type=str, default="")
-parser.add_argument("--analysis_parameters", type=str, default="")
-
-
-def write_input_model(query: dict, analysis_spec: AnalysisSpec) -> None:
+def get_input_parser() -> argparse.ArgumentParser:
     """
-    writes the input model with the s3 location from the query and input args for each path returned from the query
+    Creates and returns an argument parser for input arguments.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        A configured ArgumentParser object with predefined command-line arguments for:
+        - `--query`: A string argument for the query (default is an empty string).
+        - `--analysis_name`: A string argument for the analysis name (default is an empty string).
+        - `--analysis_version`: A string argument for the analysis version (default is an empty string).
+        - `--analysis_libraries`: A string argument for the list of analysis libraries (default is an empty string).
+        - `--analysis_parameters`: A string argument for the dict of analysis parameters (default is an empty string).
+
     """
-    s3_paths = utils.get_s3_file_locations_from_docdb_query(query)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--query", type=str, default="")
+    parser.add_argument("--analysis_name", type=str, default="")
+    parser.add_argument("--analysis_version", type=str, default="")
+    parser.add_argument("--analysis_libraries", type=str, default="")
+    parser.add_argument("--analysis_parameters", type=str, default="")
+
+    return parser
+
+
+def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -> None:
+    """
+    Writes the input model with the S3 location from the query and input arguments for each path returned from the query.
+
+    Parameters
+    ----------
+    docdb_query : dict
+        A dictionary representing the query to retrieve documents from the database.
+
+    analysis_spec : AnalysisSpecification
+        An object that contains the specifications for the analysis, including `analysis_name` and `analysis_version`.
+
+    Returns
+    -------
+    None
+        This function does not return any value. It writes the input analysis model to disk.
+    """
+    s3_paths = utils.get_s3_file_locations_from_docdb_query(docdb_query)
     for path in s3_paths:
         input_analysis_model = InputAnalysisModel(
             s3_location=path, analysis_spec=analysis_spec
@@ -36,13 +72,15 @@ def write_input_model(query: dict, analysis_spec: AnalysisSpec) -> None:
 
 
 if __name__ == "__main__":
+    parser = get_input_parser()
     args = parser.parse_args()
+    print(args)
     query = json.loads(args.query)
-    analysis_spec = AnalysisSpec(
+    analysis_spec = AnalysisSpecification(
         analysis_name=args.analysis_name,
         analysis_version=args.analysis_version,
         analysis_libraries_to_track=json.loads(args.analysis_libraries),
         analysis_parameters=json.loads(args.analysis_parameters),
     )
 
-    write_input_model(query=query, analysis_spec=analysis_spec)
+    write_input_model(docdb_query=query, analysis_spec=analysis_spec)

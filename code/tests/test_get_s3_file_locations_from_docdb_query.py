@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
+
 import s3fs
+
 from job_dispatch.utils import get_s3_file_locations_from_docdb_query
 
 
@@ -33,7 +35,8 @@ class TestGetS3FileLocationsFromDocdbQuery(unittest.TestCase):
         mock_retrieve_docdb_records.assert_called_with(
             filter_query=query, projection={"location": 1}
         )
-        mock_s3_fs.glob.assert_any_call(f"bucket/path/to/*/*.{file_extension}")
+        print(mock_s3_fs.glob.call_args_list)
+        mock_s3_fs.glob.assert_any_call(f"bucket/path/to/**/*{file_extension}")
 
 
 if __name__ == "__main__":
