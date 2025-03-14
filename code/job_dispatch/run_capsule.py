@@ -74,7 +74,14 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
 if __name__ == "__main__":
     parser = get_input_parser()
     args = parser.parse_args()
+    if args.query == '':
+        args.query = '{"name": "behavior_724910_2024-09-13_09-45-06"}'
+        args.analysis_name = "Unit_Yield"
+        args.analysis_version = "0.1.0"
+        args.analysis_libraries = '["aind-ephys-utils"]'
+        args.analysis_parameters = '{"alpha": "0.1"}'
     print(args)
+    
     query = json.loads(args.query)
     analysis_spec = AnalysisSpecification(
         analysis_name=args.analysis_name,
@@ -83,4 +90,5 @@ if __name__ == "__main__":
         analysis_parameters=json.loads(args.analysis_parameters),
     )
 
+    print(analysis_spec)
     write_input_model(docdb_query=query, analysis_spec=analysis_spec)
