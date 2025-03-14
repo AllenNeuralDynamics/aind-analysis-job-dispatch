@@ -60,7 +60,6 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
         This function does not return any value. It writes the input analysis model to disk.
     """
     s3_paths = utils.get_s3_file_locations_from_docdb_query(docdb_query)
-    logger.info(f"Found {len(s3_paths)} s3 paths for the query: {docdb_query}")
     
     for path in s3_paths:
         input_analysis_model = InputAnalysisModel(
