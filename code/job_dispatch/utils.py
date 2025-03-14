@@ -1,7 +1,10 @@
 import pathlib
+import logging
 
 import s3fs
 from aind_data_access_api.document_db import MetadataDbClient
+
+logger = logging.getLogger(__name__)
 
 RESULTS_PATH = pathlib.Path("/results")
 

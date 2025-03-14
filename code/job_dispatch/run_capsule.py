@@ -5,10 +5,12 @@ Generates the input analysis model from the user provided query
 import argparse
 import json
 import pathlib
+import logging
 
 from job_dispatch import utils
 from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
 
+logger = logging.getLogger(__name__)
 
 def get_input_parser() -> argparse.ArgumentParser:
     """
@@ -58,6 +60,8 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
         This function does not return any value. It writes the input analysis model to disk.
     """
     s3_paths = utils.get_s3_file_locations_from_docdb_query(docdb_query)
+    logger.info(f"Found {len(s3_paths)} s3 paths for the query: {docdb_query}")
+    
     for path in s3_paths:
         input_analysis_model = InputAnalysisModel(
             s3_location=path, analysis_spec=analysis_spec
@@ -72,6 +76,9 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
     parser = get_input_parser()
     args = parser.parse_args()
     if args.query == '':
