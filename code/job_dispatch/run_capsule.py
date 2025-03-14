@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser = get_input_parser()
     args = parser.parse_args()
     if args.query == '':
-        args.query = '{"name": "behavior_724910_2024-09-13_09-45-06"}'
+        args.query = '{"name": {"$regex": "^behavior_741213.*processed"}}'
         args.analysis_name = "Unit_Yield"
         args.analysis_version = "0.1.0"
         args.analysis_libraries = '["aind-ephys-utils"]'
