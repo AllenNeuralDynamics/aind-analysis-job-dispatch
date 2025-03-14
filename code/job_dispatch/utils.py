@@ -1,7 +1,10 @@
 import pathlib
+import logging
 
 import s3fs
 from aind_data_access_api.document_db import MetadataDbClient
+
+logger = logging.getLogger(__name__)
 
 RESULTS_PATH = pathlib.Path("/results")
 
@@ -42,11 +45,12 @@ def get_s3_file_locations_from_docdb_query(
     response = docdb_api_client.retrieve_docdb_records(
         filter_query=query, projection={"location": 1}
     )
+    logger.info(f"Found {len(response)} records from docDB for the query: {query}")
     for record in response:
         file_path = tuple(
             s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
         )
         if file_path:
             s3_paths.append(f"s3://{file_path[0]}")
-
+    logger.info(f"Found {len(s3_paths)} *.{file_extension} files from s3")
     return s3_paths
