@@ -71,7 +71,9 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
             / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
             "w",
         ) as f:
-            f.write(input_analysis_model.model_dump_json())
+            f.write(input_analysis_model.model_dump_json(indent=4))
+        
+    logger.info(f"{len(s3_paths)} input analysis models written to {utils.RESULTS_PATH}")
 
 
 if __name__ == "__main__":
@@ -96,5 +98,5 @@ if __name__ == "__main__":
         analysis_parameters=json.loads(args.analysis_parameters),
     )
     logger.info(analysis_spec)
-    
+
     write_input_model(docdb_query=query, analysis_spec=analysis_spec)
