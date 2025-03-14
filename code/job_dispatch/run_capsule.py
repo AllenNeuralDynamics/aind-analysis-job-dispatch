@@ -86,7 +86,7 @@ if __name__ == "__main__":
         args.analysis_version = "0.1.0"
         args.analysis_libraries = '["aind-ephys-utils"]'
         args.analysis_parameters = '{"alpha": "0.1"}'
-    print(args)
+    logger.info(args)
     
     query = json.loads(args.query)
     analysis_spec = AnalysisSpecification(
@@ -95,6 +95,6 @@ if __name__ == "__main__":
         analysis_libraries_to_track=json.loads(args.analysis_libraries),
         analysis_parameters=json.loads(args.analysis_parameters),
     )
-
-    print(analysis_spec)
+    logger.info(analysis_spec)
+    
     write_input_model(docdb_query=query, analysis_spec=analysis_spec)
