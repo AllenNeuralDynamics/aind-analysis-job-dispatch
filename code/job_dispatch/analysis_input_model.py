@@ -9,7 +9,8 @@ from pydantic import BaseModel, Field
 
 class AnalysisSpecification(BaseModel):
     """
-    Represents the specification for an analysis, including its name, version, libraries to track, and parameters.
+    Represents the specification for an analysis, including its name,
+    version, libraries to track, and parameters.
 
     Attributes
     ----------
@@ -23,7 +24,8 @@ class AnalysisSpecification(BaseModel):
         A list of libraries to track that will be used in the analysis.
 
     analysis_parameters : dict, optional
-        A dictionary of user-defined input parameters that the analysis function will use. Defaults to an empty dictionary.
+        A dictionary of user-defined input parameters that the analysis
+        function will use. Defaults to an empty dictionary.
     """
 
     analysis_name: str = Field(..., title="The analysis function that will be run")
@@ -39,15 +41,17 @@ class AnalysisSpecification(BaseModel):
 
 class InputAnalysisModel(BaseModel):
     """
-    Represents the input model for an analysis, including the S3 location and the analysis specification.
+    Represents the input model for an analysis, including the S3 location
+    and the analysis specification.
 
     Attributes
     ----------
     s3_location : str
         The input path on S3 that will be used by the analysis function.
-    
+
     analysis_spec : AnalysisSpecification
-        The analysis specification that defines the details of the analysis, such as name, version, and parameters.
+        The analysis specification that defines the details of the analysis,
+        such as name, version, and parameters.
     """
 
     s3_location: str = Field(

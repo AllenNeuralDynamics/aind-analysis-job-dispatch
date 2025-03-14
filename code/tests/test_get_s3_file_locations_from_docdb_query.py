@@ -1,7 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
-
-import s3fs
+from unittest.mock import patch
 
 from job_dispatch.utils import get_s3_file_locations_from_docdb_query
 

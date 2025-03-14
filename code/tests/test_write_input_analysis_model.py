@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from job_dispatch import utils
-from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
+from job_dispatch.analysis_input_model import AnalysisSpecification
 from job_dispatch.run_capsule import write_input_model
 
 

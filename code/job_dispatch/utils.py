@@ -1,5 +1,5 @@
-import pathlib
 import logging
+import pathlib
 
 import s3fs
 from aind_data_access_api.document_db import MetadataDbClient
@@ -28,16 +28,16 @@ def get_s3_file_locations_from_docdb_query(
     Parameters
     ----------
     query : dict
-        A dictionary representing the query to retrieve records from the document database. 
+        A dictionary representing the query to retrieve records from the document database.
         The query typically contains a filter to search for specific documents.
-    
+
     file_extension : str, optional
         The file extension to filter for when searching the S3 locations. Default is "nwb".
 
     Returns
     -------
     list of str
-        A list of S3 file locations (URLs) that match the query and the specified file extension. 
+        A list of S3 file locations (URLs) that match the query and the specified file extension.
         Each location is prefixed with "s3://".
     """
     s3_paths = []
