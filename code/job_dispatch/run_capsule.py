@@ -39,11 +39,18 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--analysis_version", type=str, default="")
     parser.add_argument("--analysis_libraries", type=str, default="")
     parser.add_argument("--analysis_parameters", type=str, default="")
+    parser.add_argument("--file_extension", type=str, default="")
+    parser.add_argument("--split_files", type=int, default=1)
 
     return parser
 
 
-def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -> None:
+def write_input_model(
+    docdb_query: dict,
+    analysis_spec: AnalysisSpecification,
+    file_extension: str = "",
+    split_files: bool = True,
+) -> None:
     """
     Writes the input model with the S3 location from the query and input arguments for each path returned from the query.
 
@@ -55,16 +62,24 @@ def write_input_model(docdb_query: dict, analysis_spec: AnalysisSpecification) -
     analysis_spec : AnalysisSpecification
         An object that contains the specifications for the analysis, including `analysis_name` and `analysis_version`.
 
+    file_extension : str, optional
+        The file extension to filter for when searching the S3 locations. Defaults to empty, meaning the bucket path will be returned from the query.
+
+    split_files : bool, optional
+        Whether or not to split files into seperate models or to store in one model as a single list.
+
     Returns
     -------
     None
         This function does not return any value. It writes the input analysis model to disk.
     """
-    s3_paths = utils.get_s3_file_locations_from_docdb_query(docdb_query)
+    s3_paths = utils.get_s3_file_locations_from_docdb_query(
+        docdb_query, file_extension=file_extension, split_files=split_files
+    )
 
     for path in s3_paths:
         input_analysis_model = InputAnalysisModel(
-            s3_location=path, analysis_spec=analysis_spec
+            location_uri=path, analysis_spec=analysis_spec
         )
         # saving hash as session_analysis-name_analysis-version, can modify based on feedback
         with open(
@@ -91,6 +106,8 @@ if __name__ == "__main__":
         args.analysis_version = "0.1.0"
         args.analysis_libraries = '["aind-ephys-utils"]'
         args.analysis_parameters = '{"alpha": "0.1"}'
+        args.file_extension = ""
+        args.split_files = bool(1)
     logger.info(args)
 
     query = json.loads(args.query)
@@ -102,4 +119,9 @@ if __name__ == "__main__":
     )
     logger.info(analysis_spec)
 
-    write_input_model(docdb_query=query, analysis_spec=analysis_spec)
+    write_input_model(
+        docdb_query=query,
+        analysis_spec=analysis_spec,
+        file_extension=args.file_extension,
+        split_files=bool(args.split_files),
+    )

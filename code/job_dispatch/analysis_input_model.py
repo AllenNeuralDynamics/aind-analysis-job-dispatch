@@ -2,7 +2,7 @@
 Class that represents the input analysis job model
 """
 
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel, Field
 
@@ -41,12 +41,12 @@ class AnalysisSpecification(BaseModel):
 
 class InputAnalysisModel(BaseModel):
     """
-    Represents the input model for an analysis, including the S3 location
+    Represents the input model for an analysis, including the input location
     and the analysis specification.
 
     Attributes
     ----------
-    s3_location : str
+    location_uri : str
         The input path on S3 that will be used by the analysis function.
 
     analysis_spec : AnalysisSpecification
@@ -54,7 +54,7 @@ class InputAnalysisModel(BaseModel):
         such as name, version, and parameters.
     """
 
-    s3_location: str = Field(
-        ..., title="The input path on s3 that will be used by analysis function"
+    location_uri: Union[str, List[str]] = Field(
+        ..., title="The input path(s) that will be used by analysis function"
     )
     analysis_spec: AnalysisSpecification = Field(..., title="The analysis specification.")

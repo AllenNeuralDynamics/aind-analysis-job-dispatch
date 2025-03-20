@@ -1,5 +1,6 @@
 import logging
 import pathlib
+from typing import List, Union
 
 import s3fs
 from aind_data_access_api.document_db import MetadataDbClient
@@ -20,10 +21,10 @@ docdb_api_client = MetadataDbClient(
 
 
 def get_s3_file_locations_from_docdb_query(
-    query: dict, file_extension: str = "nwb"
-) -> list[str]:
+    query: dict, file_extension: str = "", split_files: bool = True
+) -> List[Union[str, List[str]]]:
     """
-    Returns list of s3 locations, looking for the file extension, from the given docdb query
+    Returns s3 location or a list of s3 locations, looking for the file extension, from the given docdb query
 
     Parameters
     ----------
@@ -32,12 +33,15 @@ def get_s3_file_locations_from_docdb_query(
         The query typically contains a filter to search for specific documents.
 
     file_extension : str, optional
-        The file extension to filter for when searching the S3 locations. Default is "nwb".
+        The file extension to filter for when searching the S3 locations. If no file extension is provided, the path to the bucket is returned from the query
+
+    split_files : bool
+        Whether or not to split files into seperate models or to store in one model as a single list.
 
     Returns
     -------
     list of str
-        A list of S3 file locations (URLs) that match the query and the specified file extension.
+        A list of either single S3 file locations (URLs) that match the query and the specified file extension or a list of S3 file locations if multiple files are returned for the file extension and split_files is False.
         Each location is prefixed with "s3://".
     """
     s3_paths = []
@@ -47,10 +51,22 @@ def get_s3_file_locations_from_docdb_query(
     )
     logger.info(f"Found {len(response)} records from docDB for the query: {query}")
     for record in response:
-        file_path = tuple(
-            s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
-        )
-        if file_path:
-            s3_paths.append(f"s3://{file_path[0]}")
-    logger.info(f"Found {len(s3_paths)} *.{file_extension} files from s3")
+        if file_extension != "":
+            file_paths = tuple(
+                s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
+            )
+            if not file_paths:
+                raise FileNotFoundError(
+                    f"No {file_extension} found in {record['location']}"
+                )
+
+            if split_files:
+                for file in file_paths:
+                    s3_paths.append(f"s3://{file}")
+            else:
+                s3_paths.append([f"s3://{file}" for file in file_paths])
+            logger.info(f"Found {len(s3_paths)} *.{file_extension} files from s3")
+        else:
+            s3_paths.append(f"s3://{record['location']}")
+
     return s3_paths

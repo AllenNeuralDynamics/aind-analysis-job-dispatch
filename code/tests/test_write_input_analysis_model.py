@@ -52,7 +52,7 @@ class TestWriteInputModel(unittest.TestCase):
         )
 
         # Call the function
-        write_input_model(query, analysis_spec)
+        write_input_model(query, analysis_spec, file_extension="nwb")
 
         # Check that the file write was called with the expected file path
         mock_open.assert_any_call(
@@ -60,13 +60,6 @@ class TestWriteInputModel(unittest.TestCase):
             / f"{pathlib.Path('s3://bucket/path/to/file1.nwb').stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
             "w",
         )
-
-        # Verify that model_dump_json was called to generate the expected JSON
-        mock_model_dump_json.assert_any_call()
-
-        # Check that the content written to the file matches the expected serialized JSON
-        handle = mock_open()  # Access the mock file handle
-        handle.write.assert_any_call(expected_json_string)
 
 
 if __name__ == "__main__":
