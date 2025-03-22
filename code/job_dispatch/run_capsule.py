@@ -8,7 +8,7 @@ import logging
 import pathlib
 
 from job_dispatch import utils
-from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
+from job_dispatch.analysis_input_model import InputAnalysisModel
 
 logger = logging.getLogger(__name__)
 
@@ -26,19 +26,13 @@ def get_input_parser() -> argparse.ArgumentParser:
     argparse.ArgumentParser
         A configured ArgumentParser object with predefined command-line arguments for:
         - `--query`: A string argument for the query (default is an empty string).
-        - `--analysis_name`: A string argument for the analysis name (default is an empty string).
-        - `--analysis_version`: A string argument for the analysis version (default is an empty string).
-        - `--analysis_libraries`: A string argument for the list of analysis libraries (default is an empty string).
-        - `--analysis_parameters`: A string argument for the dict of analysis parameters (default is an empty string).
+        - `--file_extension': A string argument for specifying whether or not to find the file extension
+        - `--split_files': Whether or not to group the files into a single model or to split into seperate
 
     """
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--query", type=str, default="")
-    parser.add_argument("--analysis_name", type=str, default="")
-    parser.add_argument("--analysis_version", type=str, default="")
-    parser.add_argument("--analysis_libraries", type=str, default="")
-    parser.add_argument("--analysis_parameters", type=str, default="")
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
 
@@ -47,7 +41,6 @@ def get_input_parser() -> argparse.ArgumentParser:
 
 def write_input_model(
     docdb_query: dict,
-    analysis_spec: AnalysisSpecification,
     file_extension: str = "",
     split_files: bool = True,
 ) -> None:
@@ -73,23 +66,33 @@ def write_input_model(
     None
         This function does not return any value. It writes the input analysis model to disk.
     """
-    s3_paths = utils.get_s3_file_locations_from_docdb_query(
+    s3_buckets, s3_asset_ids, s3_paths = utils.get_s3_file_locations_from_docdb_query(
         docdb_query, file_extension=file_extension, split_files=split_files
     )
 
-    for path in s3_paths:
-        input_analysis_model = InputAnalysisModel(
-            location_uri=path, analysis_spec=analysis_spec
-        )
+    for index, bucket in enumerate(s3_buckets):
+        s3_asset_id = s3_asset_ids[index]
+        if s3_paths:
+            s3_bucket_paths = s3_paths[index]
+            input_analysis_model = InputAnalysisModel(
+                location_bucket=bucket,
+                location_asset_id=s3_asset_id,
+                location_uri=s3_bucket_paths,
+            )
+        else:
+            input_analysis_model = InputAnalysisModel(
+                location_bucket=bucket, location_asset_id=s3_asset_id
+            )
         # saving hash as session_analysis-name_analysis-version, can modify based on feedback
         with open(
-            utils.RESULTS_PATH
-            / f"{pathlib.Path(path).stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
+            utils.RESULTS_PATH / f"{pathlib.Path(bucket).stem}.json",
             "w",
         ) as f:
             f.write(input_analysis_model.model_dump_json(indent=4))
 
-    logger.info(f"{len(s3_paths)} input analysis models written to {utils.RESULTS_PATH}")
+    logger.info(
+        f"{len(s3_buckets)} input analysis models written to {utils.RESULTS_PATH}"
+    )
 
 
 if __name__ == "__main__":
@@ -102,26 +105,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.query == "":
         args.query = '{"name": {"$regex": "^behavior_741213.*processed"}}'
-        args.analysis_name = "Unit_Yield"
-        args.analysis_version = "0.1.0"
-        args.analysis_libraries = '["aind-ephys-utils"]'
-        args.analysis_parameters = '{"alpha": "0.1"}'
         args.file_extension = ""
         args.split_files = bool(1)
     logger.info(args)
 
     query = json.loads(args.query)
-    analysis_spec = AnalysisSpecification(
-        analysis_name=args.analysis_name,
-        analysis_version=args.analysis_version,
-        analysis_libraries_to_track=json.loads(args.analysis_libraries),
-        analysis_parameters=json.loads(args.analysis_parameters),
-    )
-    logger.info(analysis_spec)
 
     write_input_model(
         docdb_query=query,
-        analysis_spec=analysis_spec,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
     )

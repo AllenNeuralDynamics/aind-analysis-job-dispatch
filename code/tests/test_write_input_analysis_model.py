@@ -4,7 +4,6 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from job_dispatch import utils
-from job_dispatch.analysis_input_model import AnalysisSpecification
 from job_dispatch.run_capsule import write_input_model
 
 
@@ -24,18 +23,16 @@ class TestWriteInputModel(unittest.TestCase):
     ):
         # Setup mock return values for get_s3_file_locations_from_docdb_query
         mock_get_s3_file_locations_from_docdb_query.return_value = [
-            "s3://bucket/path/to/file1.nwb",
+            ["s3://bucket/path/to"],
+            ["12345"],
+            ["s3://bucket/path/to/file1.nwb"],
         ]
 
         # Expected serialzed input model
         expected_json = {
-            "s3_location": "s3://bucket/path/to/file1.nwb",
-            "analysis_spec": {
-                "analysis_name": "Unit Yield",
-                "analysis_version": "0.1.0",
-                "analysis_libraries_to_track": ["aind-ephys-utils"],
-                "analysis_parameters": {"alpha": "0.1"},
-            },
+            "location_bucket": "s3://bucket/path/to/",
+            "location_asset_id": "12345",
+            "location_uri": "s3://bucket/path/to/file1.nwb",
         }
         expected_json_string = json.dumps(expected_json)
         mock_model_dump_json.return_value = expected_json_string
@@ -44,20 +41,13 @@ class TestWriteInputModel(unittest.TestCase):
         query = {
             "name": "behavior_769038_2025-02-10_13-16-09_processed_2025-02-11_07-14-26"
         }
-        analysis_spec = AnalysisSpecification(
-            analysis_name="Unit Yield",
-            analysis_version="0.1.0",
-            analysis_libraries_to_track=["aind-ephys_utils"],
-            analysis_parameters={"param1": "value1"},
-        )
 
         # Call the function
-        write_input_model(query, analysis_spec, file_extension="nwb")
+        write_input_model(query, file_extension="nwb")
 
         # Check that the file write was called with the expected file path
         mock_open.assert_any_call(
-            utils.RESULTS_PATH
-            / f"{pathlib.Path('s3://bucket/path/to/file1.nwb').stem}_{analysis_spec.analysis_name}_{analysis_spec.analysis_version}.json",
+            utils.RESULTS_PATH / "to.json",
             "w",
         )
 
