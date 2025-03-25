@@ -59,7 +59,7 @@ def get_s3_file_locations_from_docdb_query(
     )
     logger.info(f"Found {len(response)} records from docDB for the query: {query}")
     for record in response:
-        s3_buckets.append(f"s3://{record['location']}")
+        s3_buckets.append(f"{record['location']}")
         s3_asset_ids.append(record["external_links"]["Code Ocean"][0])
         if file_extension != "":
             file_paths = tuple(
