@@ -23,7 +23,7 @@
 			"id": "fBA9180uNtuYPiPF",
 			"name": "split files",
 			"param_name": "split_files",
-			"description": "Either group the files into one list if multiple files are returned for the file extension or split into single input per file",
+			"description": "Either group the files into one list if multiple files are returned for the file extension in the same bucket or split into one per file",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "0",
