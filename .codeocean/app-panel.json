@@ -28,6 +28,15 @@
 			"value_type": "integer",
 			"default_value": "0",
 			"maximum": 1
+		},
+		{
+			"id": "AsuiaZ4WWTPFPt6f",
+			"name": "number of workers",
+			"param_name": "num_parallel_workers",
+			"description": "The number of parallel workers to send to wrapper capsule",
+			"help_text": "The number of parallel workers to send to wrapper capsule",
+			"type": "text",
+			"value_type": "integer"
 		}
 	]
 }

@@ -5,10 +5,12 @@ Generates the input analysis model from the user provided query
 import argparse
 import json
 import logging
+import numpy as np
 import pathlib
 
 from job_dispatch import utils
 from job_dispatch.analysis_input_model import InputAnalysisModel
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +37,16 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--query", type=str, default="")
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
+    parser.add_argument("--num_parallel_workers", type=int, default=50)
 
     return parser
 
 
-def write_input_model(
+def get_input_model_list(
     docdb_query: dict,
     file_extension: str = "",
     split_files: bool = True,
-) -> None:
+) -> list[InputAnalysisModel]:
     """
     Writes the input model with the S3 location from the query and input arguments for each path returned from the query.
 
@@ -63,12 +66,14 @@ def write_input_model(
 
     Returns
     -------
-    None
-        This function does not return any value. It writes the input analysis model to disk.
+    list: InputAnalysisModel
+        Returns a list of input analysis jobs 
     """
     s3_buckets, s3_asset_ids, s3_paths = utils.get_s3_file_locations_from_docdb_query(
         docdb_query, file_extension=file_extension, split_files=split_files
     )
+
+    input_model_jobs = []
 
     for index, bucket in enumerate(s3_buckets):
         s3_asset_id = s3_asset_ids[index]
@@ -83,17 +88,52 @@ def write_input_model(
             input_analysis_model = InputAnalysisModel(
                 location_bucket=bucket, location_asset_id=s3_asset_id
             )
-        # saving hash as session_analysis-name_analysis-version, can modify based on feedback
-        with open(
-            utils.RESULTS_PATH / f"{pathlib.Path(bucket).stem}.json",
-            "w",
-        ) as f:
-            f.write(input_analysis_model.model_dump_json(indent=4))
+        
+        input_model_jobs.append(input_analysis_model)
 
-    logger.info(
-        f"{len(s3_buckets)} input analysis models written to {utils.RESULTS_PATH}"
-    )
+    return input_model_jobs
 
+def write_input_model_list(input_model_list: list[InputAnalysisModel], num_parallel_workers: int) -> None:
+    """
+    Distributes a list of input models across a specified number of parallel workers, 
+    writes the models to disk in JSON format, and logs the progress.
+
+    Parameters
+    ----------
+    input_model_list : list of InputAnalysisModel
+        A list of InputAnalysisModel instances to be processed and written to disk.
+        
+    num_parallel_workers : int
+        The maximum number of parallel workers that can be used to process the input models.
+
+    Returns
+    -------
+    None
+        This function does not return any value. It writes JSON files to disk for each input model.
+    """
+
+    num_actual_workers = min(len(input_model_list), num_parallel_workers)
+    jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
+    
+    for n_worker, input_model_jobs in tqdm(
+        enumerate(jobs_for_each_worker), 
+        desc="Assigning jobs to workers",
+        total=len(jobs_for_each_worker)
+    ):
+        results_directory_worker_path = utils.RESULTS_PATH / f"{n_worker}"
+        if not results_directory_worker_path.exists():
+            results_directory_worker_path.mkdir()
+
+        for input_model_job in input_model_jobs:
+            with open(
+                results_directory_worker_path / f"{input_model_job.location_asset_id}.json",
+                "w",
+            ) as f:
+                f.write(input_model_job.model_dump_json(indent=4))
+
+        logger.info(
+            f"{len(input_model_jobs)} input analysis models written to {utils.RESULTS_PATH} for worker {n_worker}"
+        )
 
 if __name__ == "__main__":
 
@@ -105,14 +145,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.query == "":
         args.query = '{"name": {"$regex": "^behavior_741213.*processed"}}'
-        args.file_extension = ""
+        args.file_extension = "nwb"
         args.split_files = bool(1)
+        args.num_parallel_workers = 50
     logger.info(args)
 
     query = json.loads(args.query)
 
-    write_input_model(
+    input_model_list = get_input_model_list(
         docdb_query=query,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
     )
+
+    write_input_model_list(input_model_list, args.num_parallel_workers)

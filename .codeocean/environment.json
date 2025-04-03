@@ -18,6 +18,10 @@
 					"version": "1.0.0"
 				},
 				{
+					"name": "numpy",
+					"version": "1.26.4"
+				},
+				{
 					"name": "pydantic",
 					"version": "2.10.6"
 				},
