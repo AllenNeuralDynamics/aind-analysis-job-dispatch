@@ -24,7 +24,7 @@ def get_s3_file_locations_from_docdb_query(
     query: dict, file_extension: str = "", split_files: bool = True
 ) -> tuple[List[str], List[str], List[Union[str, List[str]]]]:
     """
-    Returns s3 bucket and s3 location or a list of s3 locations, looking for the file extension, from the given docdb query
+    Returns tuple of list of s3 buckets, list of s3 asset ids, and list of s3 paths, looking for the file extension if specified, from the given docdb query
 
     Parameters
     ----------

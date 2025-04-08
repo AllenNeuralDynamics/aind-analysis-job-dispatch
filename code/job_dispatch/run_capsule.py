@@ -28,8 +28,9 @@ def get_input_parser() -> argparse.ArgumentParser:
     argparse.ArgumentParser
         A configured ArgumentParser object with predefined command-line arguments for:
         - `--query`: A string argument for the query (default is an empty string).
-        - `--file_extension': A string argument for specifying whether or not to find the file extension
-        - `--split_files': Whether or not to group the files into a single model or to split into seperate
+        - `--file_extension`: A string argument for specifying whether or not to find the file extension
+        - `--split_files`: Whether or not to group the files into a single model or to split into seperate
+        - `--num_parallel_workers`: The number of parallel workers to output, default is 50. Determined by min(length of results returned in query, 50).
 
     """
 
@@ -54,9 +55,6 @@ def get_input_model_list(
     ----------
     docdb_query : dict
         A dictionary representing the query to retrieve documents from the database.
-
-    analysis_spec : AnalysisSpecification
-        An object that contains the specifications for the analysis, including `analysis_name` and `analysis_version`.
 
     file_extension : str, optional
         The file extension to filter for when searching the S3 locations. Defaults to empty, meaning the bucket path will be returned from the query.
