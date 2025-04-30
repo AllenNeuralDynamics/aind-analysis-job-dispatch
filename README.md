@@ -30,5 +30,10 @@ The content of the JSON file will look something like this (it will be saved as 
     "location_asset_id": "bucket123",
     "location_uri": "s3://path/to/bucket123/file.nwb"
 }
+```
+
+### Metadata Query Generator (In development)
+The linked portal helps generate simple queries that can be used as input into the job dispatch. Currently under development, but example query from filling out fields: `{"data_description.project_name": "Ephys Platform", "subject.subject_id": {"$in": ["643634"]}}`.
+Portal link: https://metadata-portal.allenneuraldynamics.org/query
 
 
