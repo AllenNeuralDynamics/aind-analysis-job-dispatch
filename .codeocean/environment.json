@@ -26,6 +26,10 @@
 					"version": "2.10.6"
 				},
 				{
+					"name": "pydantic-settings",
+					"version": "2.9.1"
+				},
+				{
 					"name": "s3fs",
 					"version": "2025.2.0"
 				}

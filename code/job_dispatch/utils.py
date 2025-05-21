@@ -20,17 +20,23 @@ docdb_api_client = MetadataDbClient(
 )
 
 
-def get_s3_file_locations_from_docdb_query(
-    query: dict, file_extension: str = "", split_files: bool = True
-) -> tuple[List[str], List[str], List[Union[str, List[str]]]]:
+def get_s3_file_locations(
+    query: Union[dict, None] = None,
+    data_asset_ids: Union[list[str], None] = None,
+    file_extension: str = "",
+    split_files: bool = True,
+) -> tuple[List[str], List[str], List[Union[str, List[str]]], List[str]]:
     """
-    Returns tuple of list of s3 buckets, list of s3 asset ids, and list of s3 paths, looking for the file extension if specified, from the given docdb query
+    Returns tuple of list of s3 buckets, list of s3 asset ids, and list of s3 paths, looking for the file extension if specified
 
     Parameters
     ----------
-    query : dict
+    query : dict | None
         A dictionary representing the query to retrieve records from the document database.
         The query typically contains a filter to search for specific documents.
+
+    data_asset_ids: list[str] | None
+        A list of data asset ids which will be used to get S3 information
 
     file_extension : str, optional
         The file extension to filter for when searching the S3 locations. If no file extension is provided, the path to the bucket is returned from the query
@@ -49,18 +55,38 @@ def get_s3_file_locations_from_docdb_query(
     s3_paths: list of str
         A list of either single S3 file locations (URLs) that match the query and the specified file extension or a list of S3 file locations if multiple files are returned for the file extension and split_files is False.
         Each location is prefixed with "s3://".
+
+    s3_asset_names: list of str
+        A list with the name of each asset
     """
     s3_paths = []
     s3_buckets = []
     s3_asset_ids = []
+    s3_asset_names = []
     s3_file_system = s3fs.S3FileSystem()
-    response = docdb_api_client.retrieve_docdb_records(
-        filter_query=query, projection={"location": 1, "external_links": 1}
-    )
-    logger.info(f"Found {len(response)} records from docDB for the query: {query}")
+
+    projection = {"location": 1, "external_links": 1, "name": 1}
+    if query is not None:
+        logger.info(f"Using query {query}")
+        response = docdb_api_client.retrieve_docdb_records(
+            filter_query=query, projection=projection
+        )
+    else:  # use list of data asset ids
+        logger.info(f"Using list of data asset ids provided {data_asset_ids}")
+        response = []
+        for data_asset_id in data_asset_ids:
+            record = docdb_api_client.retrieve_docdb_records(
+                filter_query={"external_links": {"Code Ocean": [data_asset_id]}},
+                projection=projection,
+            )
+            if record:
+                response.append(record[0])
+
+    logger.info(f"Found {len(response)} records")
     for record in response:
         s3_buckets.append(f"{record['location']}")
         s3_asset_ids.append(record["external_links"]["Code Ocean"][0])
+        s3_asset_names.append(record["name"])
         if file_extension != "":
             file_paths = tuple(
                 s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
@@ -77,4 +103,4 @@ def get_s3_file_locations_from_docdb_query(
                 s3_paths.append([f"s3://{file}" for file in file_paths])
             logger.info(f"Found {len(s3_paths)} *.{file_extension} files from s3")
 
-    return s3_buckets, s3_asset_ids, s3_paths
+    return s3_buckets, s3_asset_ids, s3_paths, s3_asset_names

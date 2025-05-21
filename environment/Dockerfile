@@ -1,4 +1,4 @@
-# hash:sha256:3d898758c2fee75f8b8f39c31a1ddfc6225b12fb1f79a60f2b8dfe33d453f3f0
+# hash:sha256:c7c26322e6305da22cb53a6b2c1edb117b7760d709b6505783eb6eebc72d0dec
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/jupyterlab:3.6.1-miniconda4.12.0-python3.9-ubuntu20.04
 
@@ -15,6 +15,7 @@ RUN pip install -U --no-cache-dir \
     aind-data-access-api[full]==1.0.0 \
     numpy==1.26.4 \
     pydantic==2.10.6 \
+    pydantic-settings==2.9.1 \
     s3fs==2025.2.0
 
 ADD "https://github.com/coder/code-server/releases/download/v4.95.3/code-server-4.95.3-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
