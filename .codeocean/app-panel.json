@@ -3,15 +3,6 @@
 	"named_parameters": true,
 	"parameters": [
 		{
-			"id": "EU0UKjCp5EVmm6fL",
-			"name": "Query ",
-			"param_name": "query",
-			"description": "The query to fetch data from the document database",
-			"help_text": "Query dictionary with fields to be specified",
-			"type": "text",
-			"value_type": "string"
-		},
-		{
 			"id": "gMZDHUh0RSOIQ2ri",
 			"name": "filter by extension",
 			"param_name": "file_extension",
@@ -23,10 +14,10 @@
 			"id": "fBA9180uNtuYPiPF",
 			"name": "split files",
 			"param_name": "split_files",
-			"description": "Either group the files into one list if multiple files are returned for the file extension in the same bucket or split into one per file",
+			"description": "Group the files into one list if multiple files are returned for the file extension in the same bucket or split into one per file. Default is split",
 			"type": "text",
 			"value_type": "integer",
-			"default_value": "0",
+			"default_value": "1",
 			"maximum": 1
 		},
 		{
