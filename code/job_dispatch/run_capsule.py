@@ -9,10 +9,11 @@ import pathlib
 from typing import Union
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from job_dispatch import utils
-from job_dispatch.analysis_input_model import AnalysisSpecification, InputAnalysisModel
+from job_dispatch.analysis_input_model import InputAnalysisModel
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,8 @@ def get_input_parser() -> argparse.ArgumentParser:
     -------
     argparse.ArgumentParser
         A configured ArgumentParser object with predefined command-line arguments for:
+        - `--docdb_query`: A json string of query for getting data assets
+        - `--use_data_assets`: If true, read in list of data asset ids and use those instead of query
         - `--file_extension`: A string argument for specifying whether or not to find the file extension
         - `--split_files`: Whether or not to group the files into a single model or to split into seperate
         - `--num_parallel_workers`: The number of parallel workers to output, default is 50. Determined by min(length of results returned in query, 50).
@@ -36,6 +39,8 @@ def get_input_parser() -> argparse.ArgumentParser:
     """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--docdb_query', type=str, default="")
+    parser.add_argument('--use_data_assets', type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
     parser.add_argument("--num_parallel_workers", type=int, default=50)
@@ -43,32 +48,8 @@ def get_input_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_analysis_specifications() -> list[AnalysisSpecification]:
-    """
-    Returns a list of analysis specifications provided by the user
-    THE FIELDS MUST BE REPLACED WITH USERD DEFINED ANALYSIS SPECIFICATIONS
-    """
-    analysis_specifications = []
-    ### CREATE DESIRED NUMBER OF ANALYSIS SPEC HERE.
-    ### REPLACE BELOW
-    analysis_specification = AnalysisSpecification(
-        analysis_name="Unit Yield",
-        analysis_version="v0.0.1",
-        analysis_libraries_to_track=["aind-ephys-utils"],
-        analysis_parameters={"isi_violations": 0.5},
-    )
-    another_specification = AnalysisSpecification(
-        analysis_name="Drift",
-        analysis_version="v0.0.1",
-        analysis_libraries_to_track=["aind-ephys-utils"],
-    )
-    analysis_specifications.append(analysis_specification)
-    analysis_specifications.append(another_specification)
-    return analysis_specifications
-
 
 def get_input_model_list(
-    analysis_specifications: list[AnalysisSpecification],
     docdb_query: Union[dict, None] = None,
     data_asset_ids: Union[list[str], None] = None,
     file_extension: str = "",
@@ -117,23 +98,20 @@ def get_input_model_list(
         if s3_paths:
             s3_bucket_paths = s3_paths[index]
 
-        for analysis_specification in analysis_specifications:
-            if s3_bucket_paths is not None:
-                input_analysis_model = InputAnalysisModel(
-                    s3_location=bucket,
-                    location_asset_id=s3_asset_id,
-                    location_uri=s3_bucket_paths,
-                    asset_name=s3_asset_name,
-                    parameters=analysis_specification,
-                )
-            else:
-                input_analysis_model = InputAnalysisModel(
-                    s3_location=bucket,
-                    location_asset_id=s3_asset_id,
-                    asset_name=s3_asset_name,
-                    parameters=analysis_specification,
-                )
-            input_model_jobs.append(input_analysis_model)
+        if s3_bucket_paths is not None:
+            input_analysis_model = InputAnalysisModel(
+                s3_location=bucket,
+                location_asset_id=s3_asset_id,
+                file_extension_locations=s3_bucket_paths,
+                asset_name=s3_asset_name,
+            )
+        else:
+            input_analysis_model = InputAnalysisModel(
+                s3_location=bucket,
+                location_asset_id=s3_asset_id,
+                asset_name=s3_asset_name,
+            )
+        input_model_jobs.append(input_analysis_model)
 
     return input_model_jobs
 
@@ -194,18 +172,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(args)
 
-    # REPLACE QUERY WITH DESIRED ONE
-    query = {"name": {"$regex": "^behavior_741213.*processed"}}
-    # query = None
-
-    # REPLACE WITH DATA ASSET IDS IF USING THAT METHOD AND SET QUERY TO None
+    query = None
     data_asset_ids = None
-    # data_asset_ids = ["93c1606f-4c0b-4638-97b1-0f1a3756d9c2", "02f84cad-fe35-4c82-a5da-c10921fb7869", "d87d3913-6d97-4cdb-8132-b043f4a10fa2"]
+
+    if bool(args.use_data_assets):
+        data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
+        if not data_asset_ids_path:
+            raise FileNotFoundError("Using data asset ids, but no path to csv provided")
+        
+        data_asset_df = pd.read_csv(data_asset_ids_path[0])
+        if data_asset_df["asset_id"].isna().all():
+            raise ValueError("Asset id column is empty")
+        
+        data_asset_ids = data_asset_df["asset_id"].tolist()
+            
+    if args.docdb_query and not bool(args.use_data_assets):
+        query = json.loads(args.docdb_query)
     
-    analysis_specifications = get_analysis_specifications() # GO TO THIS FUNCTION AND REPLACE WITH DESIRED ANALYSIS SPECS
 
     input_model_list = get_input_model_list(
-        analysis_specifications=analysis_specifications,
         docdb_query=query,
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,

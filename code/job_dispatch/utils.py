@@ -7,6 +7,7 @@ from aind_data_access_api.document_db import MetadataDbClient
 
 logger = logging.getLogger(__name__)
 
+DATA_PATH = pathlib.Path("/data")
 RESULTS_PATH = pathlib.Path("/results")
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
