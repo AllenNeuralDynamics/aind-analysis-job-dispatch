@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 import pathlib
+import uuid
 from typing import Union
 
 import numpy as np
@@ -51,7 +52,7 @@ def get_input_parser() -> argparse.ArgumentParser:
 
 def get_input_model_list(
     docdb_query: Union[dict, None] = None,
-    data_asset_ids: Union[list[str], None] = None,
+    data_asset_ids: Union[list[str], list[list[str]], None] = None,
     file_extension: str = "",
     split_files: bool = True,
 ) -> list[InputAnalysisModel]:
@@ -60,11 +61,12 @@ def get_input_model_list(
 
     Parameters
     ----------
-    analysis_specifications: list[AnalysisSpecification]
-        The list of analysis to run on data 
 
-    docdb_query : dict
+    docdb_query : Union[dict, None]
         A dictionary representing the query to retrieve documents from the database.
+    
+    data_asset_ids: Union[list[str], list[list[str]], None]
+        The data asset ids to get input models for. Either a flat list or nested list of lists.
 
     file_extension : str, optional
         The file extension to filter for when searching the S3 locations. Defaults to empty, meaning the bucket path will be returned from the query.
@@ -82,38 +84,69 @@ def get_input_model_list(
             "Either one of docdb query or list of data asset ids must be provided"
         )
 
-    s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
-        query=docdb_query,
-        data_asset_ids=data_asset_ids,
-        file_extension=file_extension,
-        split_files=split_files,
-    )
 
-    input_model_jobs = []
+    # Handle docdb_query-only mode
+    if data_asset_ids is None:
+        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
+            query=docdb_query,
+            data_asset_ids=data_asset_ids,
+            file_extension=file_extension,
+            split_files=split_files,
+        )
 
-    for index, bucket in enumerate(s3_buckets):
-        s3_asset_id = s3_asset_ids[index]
-        s3_asset_name = s3_asset_names[index]
-        s3_bucket_paths = None
-        if s3_paths:
-            s3_bucket_paths = s3_paths[index]
-
-        if s3_bucket_paths is not None:
-            input_analysis_model = InputAnalysisModel(
+        return [
+            InputAnalysisModel(
                 s3_location=bucket,
-                location_asset_id=s3_asset_id,
-                file_extension_locations=s3_bucket_paths,
-                asset_name=s3_asset_name,
+                location_asset_id=asset_id,
+                file_extension_locations=paths if paths else None,
+                asset_name=asset_name,
             )
+            for bucket, asset_id, paths, asset_name in zip(s3_buckets, s3_asset_ids, s3_paths, s3_asset_names)
+        ]
+
+    # Normalize to grouped format
+    is_flat = True
+    if isinstance(data_asset_ids, list) and all(isinstance(i, str) for i in data_asset_ids):
+        logger.info("Flat data asset ids list provided")
+        grouped_asset_ids = [data_asset_ids]
+    elif isinstance(data_asset_ids, list) and all(isinstance(i, list) for i in data_asset_ids):
+        logger.info("Nested data asset ids list provided")
+        grouped_asset_ids = data_asset_ids
+        is_flat = False
+    else:
+        raise ValueError("data_asset_ids must be None, a list of strings, or list of list of strings")
+
+    all_grouped_models = []
+
+    for group in grouped_asset_ids:
+        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
+            query=docdb_query,
+            data_asset_ids=group,
+            file_extension=file_extension,
+            split_files=split_files,
+        )
+
+        if is_flat:
+            for index, s3_bucket in enumerate(s3_buckets):
+                all_grouped_models.append(
+                    InputAnalysisModel(
+                        s3_location=s3_bucket,
+                        location_asset_id=s3_asset_ids[index],
+                        file_extension_locations=s3_paths[index] if s3_paths else None,
+                        asset_name=s3_asset_names[index],
+                    )
+                )
         else:
-            input_analysis_model = InputAnalysisModel(
-                s3_location=bucket,
-                location_asset_id=s3_asset_id,
-                asset_name=s3_asset_name,
+            all_grouped_models.append(
+                InputAnalysisModel(
+                    s3_location=s3_buckets,
+                    location_asset_id=s3_asset_ids,
+                    file_extension_locations=s3_paths if s3_paths else None,
+                    asset_name=s3_asset_names,
+                )
             )
-        input_model_jobs.append(input_analysis_model)
 
-    return input_model_jobs
+    return all_grouped_models
 
 
 def write_input_model_list(
@@ -152,7 +185,7 @@ def write_input_model_list(
         for input_model_job in input_model_jobs:
             with open(
                 results_directory_worker_path
-                / f"{input_model_job.location_asset_id}.json",
+                / f"{str(uuid.uuid4())}.json",
                 "w",
             ) as f:
                 f.write(input_model_job.model_dump_json(indent=4))
@@ -189,7 +222,7 @@ if __name__ == "__main__":
     if args.docdb_query and not bool(args.use_data_assets):
         query = json.loads(args.docdb_query)
     
-
+    #data_asset_ids = [[data_asset_ids[0]], [data_asset_ids[1], data_asset_ids[2]]] # GROUPING OF DATA ASSETS - REPLACE WITH FUNCTION
     input_model_list = get_input_model_list(
         docdb_query=query,
         data_asset_ids=data_asset_ids,

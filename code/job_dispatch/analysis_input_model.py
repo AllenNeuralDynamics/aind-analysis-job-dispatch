@@ -26,15 +26,19 @@ class InputAnalysisModel(BaseModel):
         The name of the asset
     """
 
-    s3_location: str = Field(
-        ..., title="The input path to the bucket that will be used in analysis"
+    s3_location: Union[str, List[str]] = Field(
+        ..., title="S3 bucket path(s) used in analysis"
     )
 
-    location_asset_id: str = Field(..., title="The asset id associated with the bucket")
+    location_asset_id: Union[str, List[str]] = Field(
+        ..., title="Asset ID(s) associated with the bucket"
+    )
 
     file_extension_locations: Optional[Union[str, List[str]]] = Field(
         None,
-        title="The input path(s) within the location bucket that will be used by analysis function if there are file extensions specified to be found",
+        title="Filtered path(s) in the bucket if file extension filtering is used"
     )
 
-    asset_name: str = Field(..., title="The name of the data asset")
+    asset_name: Union[str, List[str]] = Field(
+        ..., title="Name(s) of the data asset(s)"
+    )
