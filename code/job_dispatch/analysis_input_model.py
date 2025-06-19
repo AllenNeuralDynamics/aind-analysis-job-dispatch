@@ -35,10 +35,7 @@ class InputAnalysisModel(BaseModel):
     )
 
     file_extension_locations: Optional[Union[str, List[str]]] = Field(
-        None,
-        title="Filtered path(s) in the bucket if file extension filtering is used"
+        None, title="Filtered path(s) in the bucket if file extension filtering is used"
     )
 
-    asset_name: Union[str, List[str]] = Field(
-        ..., title="Name(s) of the data asset(s)"
-    )
+    asset_name: Union[str, List[str]] = Field(..., title="Name(s) of the data asset(s)")

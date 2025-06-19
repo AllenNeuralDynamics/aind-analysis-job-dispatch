@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"base_image": "codeocean/jupyterlab:3.6.1-miniconda4.12.0-python3.9-ubuntu20.04",
+	"base_image": "codeocean/mambaforge3:24.5.0-0-python3.12.4-ubuntu22.04",
 	"args": [
 		"AWS_ACCESS_KEY_ID",
 		"AWS_DEFAULT_REGION",
@@ -15,8 +15,8 @@
 		"pip": {
 			"packages": [
 				{
-					"name": "aind-data-access-api[full]",
-					"version": "1.0.0"
+					"name": "aind-data-access-api[docdb]",
+					"version": "1.2.2"
 				},
 				{
 					"name": "numpy",
@@ -25,10 +25,6 @@
 				{
 					"name": "pandas",
 					"version": "2.1.4"
-				},
-				{
-					"name": "pydantic",
-					"version": "2.10.6"
 				},
 				{
 					"name": "pydantic-settings",
@@ -42,5 +38,19 @@
 			"options": {},
 			"pre_install_options": {}
 		}
-	}
+	},
+	"env_variables": [
+		{
+			"name": "DOCDB_HOST",
+			"value": "api.allenneuraldynamics-test.org"
+		},
+		{
+			"name": "DOCDB_DATABASE",
+			"value": "analysis"
+		},
+		{
+			"name": "DOCDB_COLLECTION",
+			"value": "processing_v2"
+		}
+	]
 }

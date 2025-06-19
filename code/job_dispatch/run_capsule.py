@@ -40,14 +40,13 @@ def get_input_parser() -> argparse.ArgumentParser:
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--docdb_query', type=str, default="")
-    parser.add_argument('--use_data_assets', type=int, default=0)
+    parser.add_argument("--docdb_query", type=str, default="")
+    parser.add_argument("--use_data_assets", type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
     parser.add_argument("--num_parallel_workers", type=int, default=50)
 
     return parser
-
 
 
 def get_input_model_list(
@@ -64,7 +63,7 @@ def get_input_model_list(
 
     docdb_query : Union[dict, None]
         A dictionary representing the query to retrieve documents from the database.
-    
+
     data_asset_ids: Union[list[str], list[list[str]], None]
         The data asset ids to get input models for. Either a flat list or nested list of lists.
 
@@ -84,7 +83,6 @@ def get_input_model_list(
             "Either one of docdb query or list of data asset ids must be provided"
         )
 
-
     # Handle docdb_query-only mode
     if data_asset_ids is None:
         s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
@@ -94,27 +92,35 @@ def get_input_model_list(
             split_files=split_files,
         )
 
-        return [
-            InputAnalysisModel(
-                s3_location=bucket,
-                location_asset_id=asset_id,
-                file_extension_locations=paths if paths else None,
-                asset_name=asset_name,
+        input_models = []
+        for index, s3_bucket in enumerate(s3_buckets):
+            input_models.append(
+                InputAnalysisModel(
+                    s3_location=s3_bucket,
+                    location_asset_id=s3_asset_ids[index],
+                    file_extension_locations=s3_paths[index] if s3_paths else None,
+                    asset_name=s3_asset_names[index],
+                )
             )
-            for bucket, asset_id, paths, asset_name in zip(s3_buckets, s3_asset_ids, s3_paths, s3_asset_names)
-        ]
+        return input_models
 
     # Normalize to grouped format
     is_flat = True
-    if isinstance(data_asset_ids, list) and all(isinstance(i, str) for i in data_asset_ids):
+    if isinstance(data_asset_ids, list) and all(
+        isinstance(i, str) for i in data_asset_ids
+    ):
         logger.info("Flat data asset ids list provided")
         grouped_asset_ids = [data_asset_ids]
-    elif isinstance(data_asset_ids, list) and all(isinstance(i, list) for i in data_asset_ids):
+    elif isinstance(data_asset_ids, list) and all(
+        isinstance(i, list) for i in data_asset_ids
+    ):
         logger.info("Nested data asset ids list provided")
         grouped_asset_ids = data_asset_ids
         is_flat = False
     else:
-        raise ValueError("data_asset_ids must be None, a list of strings, or list of list of strings")
+        raise ValueError(
+            "data_asset_ids must be None, a list of strings, or list of list of strings"
+        )
 
     all_grouped_models = []
 
@@ -150,7 +156,8 @@ def get_input_model_list(
 
 
 def write_input_model_list(
-    input_model_list: list[InputAnalysisModel], num_parallel_workers: int
+    input_model_list: list[InputAnalysisModel],
+    num_parallel_workers: int,
 ) -> None:
     """
     Distributes a list of input models across a specified number of parallel workers,
@@ -170,29 +177,23 @@ def write_input_model_list(
         This function does not return any value. It writes JSON files to disk for each input model.
     """
 
+    # Step 1: Split into worker batches
     num_actual_workers = min(len(input_model_list), num_parallel_workers)
     jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
 
-    for n_worker, input_model_jobs in tqdm(
-        enumerate(jobs_for_each_worker),
-        desc="Assigning jobs to workers",
-        total=len(jobs_for_each_worker),
+    # Step 2: Write output per job inside worker folder
+    for worker_id, job_group in enumerate(
+        tqdm(jobs_for_each_worker, desc="Distributing jobs")
     ):
-        results_directory_worker_path = utils.RESULTS_PATH / f"{n_worker}"
-        if not results_directory_worker_path.exists():
-            results_directory_worker_path.mkdir()
+        worker_folder = utils.RESULTS_PATH / f"{worker_id}"
+        worker_folder.mkdir(parents=True, exist_ok=True)
 
-        for input_model_job in input_model_jobs:
-            with open(
-                results_directory_worker_path
-                / f"{str(uuid.uuid4())}.json",
-                "w",
-            ) as f:
-                f.write(input_model_job.model_dump_json(indent=4))
+        for job_id, job_model in enumerate(job_group):
+            # Write input model
+            with open(worker_folder / f"{uuid.uuid4()}.json", "w") as f:
+                f.write(job_model.model_dump_json(indent=4))
 
-        logger.info(
-            f"{len(input_model_jobs)} input analysis models written to {utils.RESULTS_PATH} for worker {n_worker}"
-        )
+        logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
 if __name__ == "__main__":
@@ -212,17 +213,20 @@ if __name__ == "__main__":
         data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
         if not data_asset_ids_path:
             raise FileNotFoundError("Using data asset ids, but no path to csv provided")
-        
+
         data_asset_df = pd.read_csv(data_asset_ids_path[0])
         if data_asset_df["asset_id"].isna().all():
             raise ValueError("Asset id column is empty")
-        
+
         data_asset_ids = data_asset_df["asset_id"].tolist()
-            
+
     if args.docdb_query and not bool(args.use_data_assets):
-        query = json.loads(args.docdb_query)
-    
-    #data_asset_ids = [[data_asset_ids[0]], [data_asset_ids[1], data_asset_ids[2]]] # GROUPING OF DATA ASSETS - REPLACE WITH FUNCTION
+        query = {
+            "name": {"$regex": "^behavior_741213.*processed"}
+        }  # json.loads(args.docdb_query)
+
+    # data_asset_ids = [[data_asset_ids[0]], [data_asset_ids[1], data_asset_ids[2]]] # GROUPING OF DATA ASSETS - REPLACE WITH FUNCTION
+
     input_model_list = get_input_model_list(
         docdb_query=query,
         data_asset_ids=data_asset_ids,
