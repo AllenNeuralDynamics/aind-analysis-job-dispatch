@@ -23,38 +23,6 @@ python script.py \
     --num_parallel_workers 50
 ```
 
-### Specifying Analysis Specification
-The analysis specification can be provided like so: A json file with a list of dictionaries following `AnalysisSpecification` model defined in `job_dispatch.analysis_input_model.py`. An example is below:
-```json
-[
-    {
-        
-        "analysis_name": "Unit Yield",
-        "analysis_version": "v0.0.5",
-        "analysis_libraries": [
-            "aind-ephys-utils"
-        ],
-        "analysis_parameters": {
-            "isi_violations": 0.5
-        },
-        "s3_output_bucket": "aind-scratch-data/arjun.sridhar"
-    },
-
-    {
-        
-        "analysis_name": "Unit Filtering",
-        "analysis_version": "v0.0.5",
-        "analysis_libraries": [
-            "aind-ephys-utils"
-        ],
-        "analysis_parameters": {
-            "isi_violations": 0.5, "amplitude_cutoff": 0.1
-        },
-        "s3_output_bucket": "aind-scratch-data/arjun.sridhar"
-    }
-]
-```
-
 ### Example Output File Content
 
 For parallelization, the output will be a folder for each worker. The output will be a json with a uuid as the filename. Example content shown below.
