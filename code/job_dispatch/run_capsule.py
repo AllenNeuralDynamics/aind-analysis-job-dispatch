@@ -5,7 +5,7 @@ Generates the input analysis model from the user provided query
 import argparse
 import json
 import logging
-import pathlib
+from pathlib import Path
 import uuid
 from typing import Union
 
@@ -41,7 +41,7 @@ def get_input_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--docdb_query", type=str, default="")
-    parser.add_argument("--use_data_asset_csv", type=int, default=1)
+    parser.add_argument("--use_data_asset_csv", type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
     parser.add_argument("--num_parallel_workers", type=int, default=50)
@@ -50,7 +50,7 @@ def get_input_parser() -> argparse.ArgumentParser:
 
 
 def get_input_model_list(
-    data_asset_ids: Union[list[str], list[list[str]], None] = None,
+    data_asset_ids: Union[list[str], list[list[str]]],
     file_extension: str = "",
     split_files: bool = True,
 ) -> list[InputAnalysisModel]:
@@ -88,10 +88,6 @@ def get_input_model_list(
         logger.info("Nested data asset ids list provided")
         grouped_asset_ids = data_asset_ids
         is_flat = False
-    else:
-        raise ValueError(
-            "data_asset_ids must be None, a list of strings, or list of list of strings"
-        )
 
     all_grouped_models = []
 
@@ -192,7 +188,7 @@ def get_data_asset_ids(args) -> list[str]:
 
     if args.docdb_query and not bool(args.use_data_asset_csv):
         logger.info("Using query")
-        if Path(args.docdb_query).exists():
+        if isinstance(args.docdb_query, str) and Path(args.docdb_query).exists():
             logger.info(f"Query input as json file at path {Path(args.docdb_query)}")
             with open(Path(args.docdb_query), "r") as f:
                 query = json.load(f)
@@ -202,6 +198,7 @@ def get_data_asset_ids(args) -> list[str]:
         logger.info(f"Query {query}")
         data_asset_ids = utils.get_data_asset_ids_from_query(query)
 
+    logger.info(f"Returned {len(data_asset_ids)} records")
     return data_asset_ids
 
 

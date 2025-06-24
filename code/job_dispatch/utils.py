@@ -34,14 +34,14 @@ def get_data_asset_ids_from_query(query: dict):
     list of str
         A list of data asset IDs that match the provided query criteria.
     """
-    projection = {"external_links.Code Ocean": 1}
+    projection = {"external_links": 1}
     response = docdb_api_client.retrieve_docdb_records(
         filter_query=query, projection=projection
     )
 
     data_asset_ids = []
     for record in response:
-        data_asset_ids.append(record[0])
+        data_asset_ids.append(record["external_links"]["Code Ocean"][0])
     
     return data_asset_ids
 
@@ -86,14 +86,11 @@ def get_s3_input_information(
     s3_file_system = s3fs.S3FileSystem()
 
     projection = {"location": 1, "external_links": 1, "name": 1}
-    response = []
-    for data_asset_id in data_asset_ids:
-        record = docdb_api_client.retrieve_docdb_records(
-            filter_query={"external_links": {"Code Ocean": [data_asset_id]}},
-            projection=projection,
-        )
-        if record:
-            response.append(record[0])
+    response = docdb_api_client.retrieve_docdb_records(
+        filter_query={"external_links.Code Ocean": {"$in": data_asset_ids}},
+        projection=projection,
+    )
+
 
     for record in response:
         s3_buckets.append(f"{record['location']}")
