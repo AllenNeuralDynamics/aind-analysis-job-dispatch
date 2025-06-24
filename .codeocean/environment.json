@@ -15,8 +15,8 @@
 		"pip": {
 			"packages": [
 				{
-					"name": "aind-data-access-api[docdb]",
-					"version": "1.2.2"
+					"name": "git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git#egg=aind-analysis-results",
+					"version": "c64c0526d3b6ed4b8a1aa9334698a810b560607d"
 				},
 				{
 					"name": "numpy",

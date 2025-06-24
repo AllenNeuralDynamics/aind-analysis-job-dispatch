@@ -14,7 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from job_dispatch import utils
-from job_dispatch.analysis_input_model import InputAnalysisModel
+from aind_analysis_results.analysis_dispatch_model import AnalysisDispatchModel
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def get_input_model_list(
     data_asset_ids: Union[list[str], list[list[str]]],
     file_extension: str = "",
     split_files: bool = True,
-) -> list[InputAnalysisModel]:
+) -> list[AnalysisDispatchModel]:
     """
     Writes the input model with the S3 location from the query and input arguments
 
@@ -71,7 +71,7 @@ def get_input_model_list(
 
     Returns
     -------
-    list: InputAnalysisModel
+    list: AnalysisDispatchModel
         Returns a list of input analysis jobs
     """
 
@@ -101,19 +101,19 @@ def get_input_model_list(
         if is_flat:
             for index, s3_bucket in enumerate(s3_buckets):
                 all_grouped_models.append(
-                    InputAnalysisModel(
+                    AnalysisDispatchModel(
                         s3_location=[s3_bucket],
-                        location_asset_id=[s3_asset_ids[index]],
-                        file_extension_locations=[s3_paths[index]] if s3_paths else None,
+                        asset_id=[s3_asset_ids[index]],
+                        file_location=[s3_paths[index]] if s3_paths else None,
                         asset_name=[s3_asset_names[index]],
                     )
                 )
         else:
             all_grouped_models.append(
-                InputAnalysisModel(
+                AnalysisDispatchModel(
                     s3_location=s3_buckets,
-                    location_asset_id=s3_asset_ids,
-                    file_extension_locations=s3_paths if s3_paths else None,
+                    asset_id=s3_asset_ids,
+                    file_location=s3_paths if s3_paths else None,
                     asset_name=s3_asset_names,
                 )
             )
@@ -122,7 +122,7 @@ def get_input_model_list(
 
 
 def write_input_model_list(
-    input_model_list: list[InputAnalysisModel],
+    input_model_list: list[AnalysisDispatchModel],
     num_parallel_workers: int,
 ) -> None:
     """
@@ -131,8 +131,8 @@ def write_input_model_list(
 
     Parameters
     ----------
-    input_model_list : list of InputAnalysisModel
-        A list of InputAnalysisModel instances to be processed and written to disk.
+    input_model_list : list of AnalysisDispatchModel
+        A list of AnalysisDispatchModel instances to be processed and written to disk.
 
     num_parallel_workers : int
         The maximum number of parallel workers that can be used to process the input models.

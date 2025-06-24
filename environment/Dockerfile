@@ -1,4 +1,4 @@
-# hash:sha256:5f66214248443e1b1e3caac26688cf87bab4cfaf68b0bbfa4049c25ba338f3d2
+# hash:sha256:3cb5e058254349358cd5429be2bddb92ca57175ac66b5ed86c4628108133a50e
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/mambaforge3:24.5.0-0-python3.12.4-ubuntu22.04
 
@@ -16,11 +16,11 @@ ENV DOCDB_DATABASE=analysis
 ENV DOCDB_COLLECTION=processing_v2
 
 RUN pip install -U --no-cache-dir \
-    aind-data-access-api[docdb]==1.2.2 \
     numpy==1.26.4 \
     pandas==2.1.4 \
     pydantic-settings==2.9.1 \
-    s3fs==2025.2.0
+    s3fs==2025.2.0 \
+    -e git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git@c64c0526d3b6ed4b8a1aa9334698a810b560607d#egg=aind-analysis-results
 
 COPY postInstall /
 RUN /postInstall
