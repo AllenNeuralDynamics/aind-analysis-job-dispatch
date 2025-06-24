@@ -20,10 +20,33 @@ docdb_api_client = MetadataDbClient(
     collection=COLLECTION,
 )
 
+def get_data_asset_ids_from_query(query: dict):
+    """
+    Retrieve data asset IDs based on query passed in.
 
-def get_s3_file_locations(
-    query: Union[dict, None] = None,
-    data_asset_ids: Union[list[str], None] = None,
+    Parameters
+    ----------
+    query : dict
+        A dictionary representing the query criteria used to filter data assets
+    
+    Returns
+    -------
+    list of str
+        A list of data asset IDs that match the provided query criteria.
+    """
+    projection = {"external_links.Code Ocean": 1}
+    response = docdb_api_client.retrieve_docdb_records(
+        filter_query=query, projection=projection
+    )
+
+    data_asset_ids = []
+    for record in response:
+        data_asset_ids.append(record[0])
+    
+    return data_asset_ids
+
+def get_s3_input_information(
+    data_asset_ids: list[str],
     file_extension: str = "",
     split_files: bool = True,
 ) -> tuple[List[str], List[str], List[Union[str, List[str]]], List[str]]:
@@ -32,11 +55,7 @@ def get_s3_file_locations(
 
     Parameters
     ----------
-    query : dict | None
-        A dictionary representing the query to retrieve records from the document database.
-        The query typically contains a filter to search for specific documents.
-
-    data_asset_ids: list[str] | None
+    data_asset_ids: list[str]
         A list of data asset ids which will be used to get S3 information
 
     file_extension : str, optional
@@ -67,23 +86,15 @@ def get_s3_file_locations(
     s3_file_system = s3fs.S3FileSystem()
 
     projection = {"location": 1, "external_links": 1, "name": 1}
-    if query is not None:
-        logger.info(f"Using query {query}")
-        response = docdb_api_client.retrieve_docdb_records(
-            filter_query=query, projection=projection
+    response = []
+    for data_asset_id in data_asset_ids:
+        record = docdb_api_client.retrieve_docdb_records(
+            filter_query={"external_links": {"Code Ocean": [data_asset_id]}},
+            projection=projection,
         )
-    else:  # use list of data asset ids
-        logger.info(f"Using list of data asset ids provided {data_asset_ids}")
-        response = []
-        for data_asset_id in data_asset_ids:
-            record = docdb_api_client.retrieve_docdb_records(
-                filter_query={"external_links": {"Code Ocean": [data_asset_id]}},
-                projection=projection,
-            )
-            if record:
-                response.append(record[0])
+        if record:
+            response.append(record[0])
 
-    logger.info(f"Found {len(response)} records")
     for record in response:
         s3_buckets.append(f"{record['location']}")
         s3_asset_ids.append(record["external_links"]["Code Ocean"][0])

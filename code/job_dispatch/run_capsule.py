@@ -32,7 +32,7 @@ def get_input_parser() -> argparse.ArgumentParser:
     argparse.ArgumentParser
         A configured ArgumentParser object with predefined command-line arguments for:
         - `--docdb_query`: A json string of query for getting data assets
-        - `--use_data_assets`: If true, read in list of data asset ids and use those instead of query
+        - `--use_data_asset_csv`: If true, read in list of data asset ids and use those instead of query
         - `--file_extension`: A string argument for specifying whether or not to find the file extension
         - `--split_files`: Whether or not to group the files into a single model or to split into seperate
         - `--num_parallel_workers`: The number of parallel workers to output, default is 50. Determined by min(length of results returned in query, 50).
@@ -41,7 +41,7 @@ def get_input_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--docdb_query", type=str, default="")
-    parser.add_argument("--use_data_assets", type=int, default=0)
+    parser.add_argument("--use_data_asset_csv", type=int, default=1)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
     parser.add_argument("--num_parallel_workers", type=int, default=50)
@@ -50,7 +50,6 @@ def get_input_parser() -> argparse.ArgumentParser:
 
 
 def get_input_model_list(
-    docdb_query: Union[dict, None] = None,
     data_asset_ids: Union[list[str], list[list[str]], None] = None,
     file_extension: str = "",
     split_files: bool = True,
@@ -60,9 +59,6 @@ def get_input_model_list(
 
     Parameters
     ----------
-
-    docdb_query : Union[dict, None]
-        A dictionary representing the query to retrieve documents from the database.
 
     data_asset_ids: Union[list[str], list[list[str]], None]
         The data asset ids to get input models for. Either a flat list or nested list of lists.
@@ -78,31 +74,6 @@ def get_input_model_list(
     list: InputAnalysisModel
         Returns a list of input analysis jobs
     """
-    if docdb_query is None and data_asset_ids is None:
-        raise ValueError(
-            "Either one of docdb query or list of data asset ids must be provided"
-        )
-
-    # Handle docdb_query-only mode
-    if data_asset_ids is None:
-        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
-            query=docdb_query,
-            data_asset_ids=data_asset_ids,
-            file_extension=file_extension,
-            split_files=split_files,
-        )
-
-        input_models = []
-        for index, s3_bucket in enumerate(s3_buckets):
-            input_models.append(
-                InputAnalysisModel(
-                    s3_location=s3_bucket,
-                    location_asset_id=s3_asset_ids[index],
-                    file_extension_locations=s3_paths[index] if s3_paths else None,
-                    asset_name=s3_asset_names[index],
-                )
-            )
-        return input_models
 
     # Normalize to grouped format
     is_flat = True
@@ -125,8 +96,7 @@ def get_input_model_list(
     all_grouped_models = []
 
     for group in grouped_asset_ids:
-        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_file_locations(
-            query=docdb_query,
+        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_input_information(
             data_asset_ids=group,
             file_extension=file_extension,
             split_files=split_files,
@@ -136,10 +106,10 @@ def get_input_model_list(
             for index, s3_bucket in enumerate(s3_buckets):
                 all_grouped_models.append(
                     InputAnalysisModel(
-                        s3_location=s3_bucket,
-                        location_asset_id=s3_asset_ids[index],
-                        file_extension_locations=s3_paths[index] if s3_paths else None,
-                        asset_name=s3_asset_names[index],
+                        s3_location=[s3_bucket],
+                        location_asset_id=[s3_asset_ids[index]],
+                        file_extension_locations=[s3_paths[index]] if s3_paths else None,
+                        asset_name=[s3_asset_names[index]],
                     )
                 )
         else:
@@ -196,20 +166,20 @@ def write_input_model_list(
         logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
-if __name__ == "__main__":
+def get_data_asset_ids(args) -> list[str]:
+    """
+    Retrieve a list of data asset IDs based on the provided arguments.
 
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    Parameters
+    ----------
+    args : input arguments for determining which input to use - query or list of ids
 
-    parser = get_input_parser()
-    args = parser.parse_args()
-    logger.info(args)
-
-    query = None
-    data_asset_ids = None
-
-    if bool(args.use_data_assets):
+    Returns
+    -------
+    list of str
+        A list of data asset ID strings that match the provided filters.
+    """
+    if bool(args.use_data_asset_csv):
         data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
         if not data_asset_ids_path:
             raise FileNotFoundError("Using data asset ids, but no path to csv provided")
@@ -220,15 +190,36 @@ if __name__ == "__main__":
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
 
-    if args.docdb_query and not bool(args.use_data_assets):
-        query = {
-            "name": {"$regex": "^behavior_741213.*processed"}
-        }  # json.loads(args.docdb_query)
+    if args.docdb_query and not bool(args.use_data_asset_csv):
+        logger.info("Using query")
+        if Path(args.docdb_query).exists():
+            logger.info(f"Query input as json file at path {Path(args.docdb_query)}")
+            with open(Path(args.docdb_query), "r") as f:
+                query = json.load(f)
+        else:
+            query = json.loads(args.docdb_query)
 
-    # data_asset_ids = [[data_asset_ids[0]], [data_asset_ids[1], data_asset_ids[2]]] # GROUPING OF DATA ASSETS - REPLACE WITH FUNCTION
+        logger.info(f"Query {query}")
+        data_asset_ids = utils.get_data_asset_ids_from_query(query)
+
+    return data_asset_ids
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+    parser = get_input_parser()
+    args = parser.parse_args()
+    logger.info(args)
+
+    data_asset_ids = get_data_asset_ids(args)
+    ### IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
+    ### OR RESTRUCTURE FLAT LIST INTO GROUPS
 
     input_model_list = get_input_model_list(
-        docdb_query=query,
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
