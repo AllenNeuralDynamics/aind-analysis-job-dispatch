@@ -11,30 +11,27 @@ This script accepts several command-line arguments:
 | `--file_extension`      | string  | The file extension to search for from the bucket returned by the query. Defualt is empty                                                                                                             |
 | `--split_files`   | int  | Either group the files into one list if multiple files are returned for the file extension or split into single input per file. Default is to split
 | `--num_parallel_workers`    | int  |  The number of parallel workers to output, default is 50
-| `--use_data_assets`  | int | Whether or not to use the data asset ids in the csv provided. Default is 0. If 1, there MUST be a csv in the `/data` folder called `data_asset_input.csv`, with the column `asset_id`.
+| `--use_data_asset_csv`  | int | Whether or not to use the data asset ids in the csv provided. Default is 0. If 1, there MUST be a csv in the `/data` folder called `data_asset_input.csv`, with the column `asset_id`.
 
-### Example Command:
-
-```bash
-python script.py \
-    --query '{"name": {"$regex": "^behavior_741213.*processed"}}'
-    --file_extension "" \
-    --split_files 1 \
-    --num_parallel_workers 50
-```
 
 ### Example Output File Content
 
-For parallelization, the output will be a folder for each worker. The output will be a json with a uuid as the filename. Example content shown below.
+For parallelization, the output will be a folder for each worker. The output will be a json model (model lives here [Dispatch Analysis Model](https://github.com/AllenNeuralDynamics/aind-analysis-results/blob/main/src/aind_analysis_results/analysis_dispatch_model.py) with a uuid as the filename. Example content shown below.
 
 ```json
 {
-
-    "s3_location": "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/d94ab360-f393-41f4-831f-e098f11803df",
-    "location_asset_id": "d94ab360-f393-41f4-831f-e098f11803df",
-    "file_extension_locations": null,
-    "asset_name": "behavior_741213_2024-08-26_16-28-28_processed_2024-09-17_07-25-04"
-
+    "s3_location": [
+        "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3"
+    ],
+    "asset_id": [
+        "50fa9416-4e21-482f-8901-889322a87ae3"
+    ],
+    "asset_name": [
+        "behavior_774659_2025-06-07_14-31-15_processed_2025-06-08_03-49-49"
+    ],
+    "file_location": [
+        "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3/nwb/behavior_774659_2025-06-07_14-31-15.nwb"
+    ]
 }
 ```
 
