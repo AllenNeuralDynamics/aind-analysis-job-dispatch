@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 import uuid
-from typing import Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -53,6 +53,7 @@ def get_input_model_list(
     data_asset_ids: Union[list[str], list[list[str]]],
     file_extension: str = "",
     split_files: bool = True,
+    analysis_parameters: Union[list[dict[str, Any]], None] = None
 ) -> list[AnalysisDispatchModel]:
     """
     Writes the input model with the S3 location from the query and input arguments
@@ -68,6 +69,9 @@ def get_input_model_list(
 
     split_files : bool, optional
         Whether or not to split files into seperate models or to store in one model as a single list.
+
+    analysis_parameters: Union[list[dict[str, Any]], None], default is None
+        List of dicts of analysis parameters. The dispatch will compute the product over input data and analysis dict for each in list.
 
     Returns
     -------
@@ -100,23 +104,47 @@ def get_input_model_list(
 
         if is_flat:
             for index, s3_bucket in enumerate(s3_buckets):
+                if analysis_parameters is None:
+                    all_grouped_models.append(
+                        AnalysisDispatchModel(
+                            s3_location=[s3_bucket],
+                            asset_id=[s3_asset_ids[index]],
+                            file_location=[s3_paths[index]] if s3_paths else None,
+                            asset_name=[s3_asset_names[index]],
+                        )
+                    )
+                else:
+                    for parameters in analysis_parameters:
+                        all_grouped_models.append(
+                            AnalysisDispatchModel(
+                                s3_location=[s3_bucket],
+                                asset_id=[s3_asset_ids[index]],
+                                file_location=[s3_paths[index]] if s3_paths else None,
+                                asset_name=[s3_asset_names[index]],
+                                analysis_parameters=parameters
+                            )
+                        )
+        else:
+            if analysis_parameters is None:
                 all_grouped_models.append(
                     AnalysisDispatchModel(
-                        s3_location=[s3_bucket],
-                        asset_id=[s3_asset_ids[index]],
-                        file_location=[s3_paths[index]] if s3_paths else None,
-                        asset_name=[s3_asset_names[index]],
+                        s3_location=s3_buckets,
+                        asset_id=s3_asset_ids,
+                        file_location=s3_paths if s3_paths else None,
+                        asset_name=s3_asset_names,
                     )
                 )
-        else:
-            all_grouped_models.append(
-                AnalysisDispatchModel(
-                    s3_location=s3_buckets,
-                    asset_id=s3_asset_ids,
-                    file_location=s3_paths if s3_paths else None,
-                    asset_name=s3_asset_names,
-                )
-            )
+            else:
+                for parameters in analysis_parameters:
+                    all_grouped_models.append(
+                        AnalysisDispatchModel(
+                            s3_location=[s3_bucket],
+                            asset_id=[s3_asset_ids[index]],
+                            file_location=[s3_paths[index]] if s3_paths else None,
+                            asset_name=[s3_asset_names[index]],
+                            analysis_parameters=parameters
+                        )
+                    )
 
     return all_grouped_models
 
@@ -216,10 +244,17 @@ if __name__ == "__main__":
     ### IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
     ### OR RESTRUCTURE FLAT LIST INTO GROUPS
 
+    analysis_parameters_path = tuple(utils.DATA_PATH.glob('analysis_parameters.json'))
+    if analysis_parameters_path:
+        logger.info("Found analysis parameters json file with list of analyses. Will compute product over parameters")
+        with open(analysis_parameters_path[0], "r") as f:
+            analysis_parameters = json.load(f)
+
     input_model_list = get_input_model_list(
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
+        analysis_parameters=analysis_parameters
     )
 
     write_input_model_list(input_model_list, args.num_parallel_workers)

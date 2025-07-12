@@ -16,7 +16,7 @@
 			"packages": [
 				{
 					"name": "git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git#egg=aind-analysis-results",
-					"version": "c64c0526d3b6ed4b8a1aa9334698a810b560607d"
+					"version": "0c929ca72ca34ca78001186f26ea6afbc7fd220e"
 				},
 				{
 					"name": "numpy",

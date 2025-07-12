@@ -1,4 +1,4 @@
-# hash:sha256:3cb5e058254349358cd5429be2bddb92ca57175ac66b5ed86c4628108133a50e
+# hash:sha256:642ed2ddf802d9ae002400257459a75af7dce64844efa9d57a7febd860114479
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/mambaforge3:24.5.0-0-python3.12.4-ubuntu22.04
 
@@ -20,7 +20,7 @@ RUN pip install -U --no-cache-dir \
     pandas==2.1.4 \
     pydantic-settings==2.9.1 \
     s3fs==2025.2.0 \
-    -e git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git@c64c0526d3b6ed4b8a1aa9334698a810b560607d#egg=aind-analysis-results
+    -e git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git@0c929ca72ca34ca78001186f26ea6afbc7fd220e#egg=aind-analysis-results
 
 COPY postInstall /
 RUN /postInstall
