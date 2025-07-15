@@ -5,16 +5,16 @@ Generates the input analysis model from the user provided query
 import argparse
 import json
 import logging
-from pathlib import Path
 import uuid
+from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
 import pandas as pd
+from aind_analysis_results.analysis_dispatch_model import AnalysisDispatchModel
 from tqdm import tqdm
 
 from job_dispatch import utils
-from aind_analysis_results.analysis_dispatch_model import AnalysisDispatchModel
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,15 @@ def get_input_parser() -> argparse.ArgumentParser:
     argparse.ArgumentParser
         A configured ArgumentParser object with predefined command-line arguments for:
         - `--docdb_query`: A json string of query for getting data assets
-        - `--use_data_asset_csv`: If true, read in list of data asset ids and use those instead of query
-        - `--file_extension`: A string argument for specifying whether or not to find the file extension
-        - `--split_files`: Whether or not to group the files into a single model or to split into seperate
-        - `--num_parallel_workers`: The number of parallel workers to output, default is 50. Determined by min(length of results returned in query, 50).
+        - `--use_data_asset_csv`: If true, read in list of data asset ids
+                                  and use those instead of query
+        - `--file_extension`: A string argument for specifying whether
+                              or not to find the file extension
+        - `--split_files`: Whether or not to group the files into a
+                           single model or to split into seperate
+        - `--num_parallel_workers`: The number of parallel workers to output,
+                                    default is 50.
+                                    min(length of results returned in query, 50).
 
     """
 
@@ -53,7 +58,7 @@ def get_input_model_list(
     data_asset_ids: Union[list[str], list[list[str]]],
     file_extension: str = "",
     split_files: bool = True,
-    analysis_parameters: Union[list[dict[str, Any]], None] = None
+    distributed_analysis_parameters: Union[list[dict[str, Any]], None] = None,
 ) -> list[AnalysisDispatchModel]:
     """
     Writes the input model with the S3 location from the query and input arguments
@@ -62,16 +67,22 @@ def get_input_model_list(
     ----------
 
     data_asset_ids: Union[list[str], list[list[str]], None]
-        The data asset ids to get input models for. Either a flat list or nested list of lists.
+        The data asset ids to get input models for.
+        Either a flat list or nested list of lists.
 
     file_extension : str, optional
-        The file extension to filter for when searching the S3 locations. Defaults to empty, meaning the bucket path will be returned from the query.
+        The file extension to filter for when searching the S3 locations.
+        Defaults to empty, meaning the bucket path
+        will be returned from the query.
 
     split_files : bool, optional
-        Whether or not to split files into seperate models or to store in one model as a single list.
+        Whether or not to split files into seperate models
+        or to store in one model as a single list.
 
-    analysis_parameters: Union[list[dict[str, Any]], None], default is None
-        List of dicts of analysis parameters. The dispatch will compute the product over input data and analysis dict for each in list.
+    distributed_analysis_parameters: Union[list[dict[str, Any]], None]
+        List of dicts of analysis parameters.
+        The dispatch will compute the product over
+        input data and analysis dict for each in list.
 
     Returns
     -------
@@ -96,36 +107,42 @@ def get_input_model_list(
     all_grouped_models = []
 
     for group in grouped_asset_ids:
-        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = utils.get_s3_input_information(
-            data_asset_ids=group,
-            file_extension=file_extension,
-            split_files=split_files,
+        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = (
+            utils.get_s3_input_information(
+                data_asset_ids=group,
+                file_extension=file_extension,
+                split_files=split_files,
+            )
         )
 
         if is_flat:
             for index, s3_bucket in enumerate(s3_buckets):
-                if analysis_parameters is None:
+                if distributed_analysis_parameters is None:
                     all_grouped_models.append(
                         AnalysisDispatchModel(
                             s3_location=[s3_bucket],
                             asset_id=[s3_asset_ids[index]],
-                            file_location=[s3_paths[index]] if s3_paths else None,
+                            file_location=(
+                                [s3_paths[index]] if s3_paths else None
+                            ),
                             asset_name=[s3_asset_names[index]],
                         )
                     )
                 else:
-                    for parameters in analysis_parameters:
+                    for parameters in distributed_analysis_parameters:
                         all_grouped_models.append(
                             AnalysisDispatchModel(
                                 s3_location=[s3_bucket],
                                 asset_id=[s3_asset_ids[index]],
-                                file_location=[s3_paths[index]] if s3_paths else None,
+                                file_location=(
+                                    [s3_paths[index]] if s3_paths else None
+                                ),
                                 asset_name=[s3_asset_names[index]],
-                                analysis_parameters=parameters
+                                distributed_parameters=parameters,
                             )
                         )
         else:
-            if analysis_parameters is None:
+            if distributed_analysis_parameters is None:
                 all_grouped_models.append(
                     AnalysisDispatchModel(
                         s3_location=s3_buckets,
@@ -135,14 +152,14 @@ def get_input_model_list(
                     )
                 )
             else:
-                for parameters in analysis_parameters:
+                for parameters in distributed_analysis_parameters:
                     all_grouped_models.append(
                         AnalysisDispatchModel(
-                            s3_location=[s3_bucket],
-                            asset_id=[s3_asset_ids[index]],
-                            file_location=[s3_paths[index]] if s3_paths else None,
-                            asset_name=[s3_asset_names[index]],
-                            analysis_parameters=parameters
+                            s3_location=s3_buckets,
+                            asset_id=s3_asset_ids,
+                            file_location=s3_paths if s3_paths else None,
+                            asset_name=s3_asset_names,
+                            distributed_parameters=parameters,
                         )
                     )
 
@@ -163,12 +180,14 @@ def write_input_model_list(
         A list of AnalysisDispatchModel instances to be processed and written to disk.
 
     num_parallel_workers : int
-        The maximum number of parallel workers that can be used to process the input models.
+        The maximum number of parallel workers
+        that can be used to process the input models.
 
     Returns
     -------
     None
-        This function does not return any value. It writes JSON files to disk for each input model.
+        This function does not return any value.
+        It writes JSON files to disk for each input model.
     """
 
     # Step 1: Split into worker batches
@@ -206,7 +225,9 @@ def get_data_asset_ids(args) -> list[str]:
     if bool(args.use_data_asset_csv):
         data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
         if not data_asset_ids_path:
-            raise FileNotFoundError("Using data asset ids, but no path to csv provided")
+            raise FileNotFoundError(
+                "Using data asset ids, but no path to csv provided"
+            )
 
         data_asset_df = pd.read_csv(data_asset_ids_path[0])
         if data_asset_df["asset_id"].isna().all():
@@ -216,8 +237,13 @@ def get_data_asset_ids(args) -> list[str]:
 
     if args.docdb_query and not bool(args.use_data_asset_csv):
         logger.info("Using query")
-        if isinstance(args.docdb_query, str) and Path(args.docdb_query).exists():
-            logger.info(f"Query input as json file at path {Path(args.docdb_query)}")
+        if (
+            isinstance(args.docdb_query, str)
+            and Path(args.docdb_query).exists()
+        ):
+            logger.info(
+                f"Query input as json file at path {Path(args.docdb_query)}"
+            )
             with open(Path(args.docdb_query), "r") as f:
                 query = json.load(f)
         else:
@@ -240,21 +266,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(args)
 
+    # IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
+    # OR RESTRUCTURE FLAT LIST INTO GROUPS
     data_asset_ids = get_data_asset_ids(args)
-    ### IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
-    ### OR RESTRUCTURE FLAT LIST INTO GROUPS
 
-    analysis_parameters_path = tuple(utils.DATA_PATH.glob('analysis_parameters.json'))
-    if analysis_parameters_path:
-        logger.info("Found analysis parameters json file with list of analyses. Will compute product over parameters")
-        with open(analysis_parameters_path[0], "r") as f:
-            analysis_parameters = json.load(f)
+    distributed_analysis_parameters_path = tuple(
+        utils.DATA_PATH.glob("distributed_parameters.json")
+    )
+    if distributed_analysis_parameters_path:
+        with open(distributed_analysis_parameters_path[0], "r") as f:
+            distributed_analysis_parameters = json.load(f)
+        logger.info(
+            f"Found distributed analysis parameters json file "
+            f"with {len(distributed_analysis_parameters)} list of analyses "
+            "Will compute product over parameters"
+        )
 
     input_model_list = get_input_model_list(
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
-        analysis_parameters=analysis_parameters
+        distributed_analysis_parameters=distributed_analysis_parameters,
     )
 
     write_input_model_list(input_model_list, args.num_parallel_workers)
