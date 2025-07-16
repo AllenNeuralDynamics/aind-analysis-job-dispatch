@@ -270,6 +270,7 @@ if __name__ == "__main__":
     # OR RESTRUCTURE FLAT LIST INTO GROUPS
     data_asset_ids = get_data_asset_ids(args)
 
+    distributed_analysis_parameters = None
     distributed_analysis_parameters_path = tuple(
         utils.DATA_PATH.glob("distributed_parameters.json")
     )
