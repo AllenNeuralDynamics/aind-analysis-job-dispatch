@@ -6,7 +6,6 @@
 		"AWS_DEFAULT_REGION",
 		"AWS_SECRET_ACCESS_KEY"
 	],
-	"post_install": true,
 	"options": {
 		"registry_host_arg": true,
 		"git_ask_pass": true
@@ -15,8 +14,8 @@
 		"pip": {
 			"packages": [
 				{
-					"name": "git+https://github.com/AllenNeuralDynamics/aind-analysis-results.git#egg=aind-analysis-results",
-					"version": "c64c0526d3b6ed4b8a1aa9334698a810b560607d"
+					"name": "git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils#egg=aind-analysis-results",
+					"version": "ee8b95b18da98e96d2778b223cb05e41b9b65554"
 				},
 				{
 					"name": "numpy",
@@ -38,19 +37,5 @@
 			"options": {},
 			"pre_install_options": {}
 		}
-	},
-	"env_variables": [
-		{
-			"name": "DOCDB_HOST",
-			"value": "api.allenneuraldynamics-test.org"
-		},
-		{
-			"name": "DOCDB_DATABASE",
-			"value": "analysis"
-		},
-		{
-			"name": "DOCDB_COLLECTION",
-			"value": "processing_v2"
-		}
-	]
+	}
 }

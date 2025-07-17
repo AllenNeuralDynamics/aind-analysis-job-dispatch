@@ -20,6 +20,7 @@ docdb_api_client = MetadataDbClient(
     collection=COLLECTION,
 )
 
+
 def get_data_asset_ids_from_query(query: dict):
     """
     Retrieve data asset IDs based on query passed in.
@@ -28,7 +29,7 @@ def get_data_asset_ids_from_query(query: dict):
     ----------
     query : dict
         A dictionary representing the query criteria used to filter data assets
-    
+
     Returns
     -------
     list of str
@@ -42,8 +43,9 @@ def get_data_asset_ids_from_query(query: dict):
     data_asset_ids = []
     for record in response:
         data_asset_ids.append(record["external_links"]["Code Ocean"][0])
-    
+
     return data_asset_ids
+
 
 def get_s3_input_information(
     data_asset_ids: list[str],
@@ -51,7 +53,8 @@ def get_s3_input_information(
     split_files: bool = True,
 ) -> tuple[List[str], List[str], List[Union[str, List[str]]], List[str]]:
     """
-    Returns tuple of list of s3 buckets, list of s3 asset ids, and list of s3 paths, looking for the file extension if specified
+    Returns tuple of list of s3 buckets, list of s3 asset ids,
+    and list of s3 paths, looking for the file extension if specified
 
     Parameters
     ----------
@@ -59,10 +62,13 @@ def get_s3_input_information(
         A list of data asset ids which will be used to get S3 information
 
     file_extension : str, optional
-        The file extension to filter for when searching the S3 locations. If no file extension is provided, the path to the bucket is returned from the query
+        The file extension to filter for when searching the S3 locations.
+        If no file extension is provided,
+        the path to the bucket is returned from the query
 
     split_files : bool
-        Whether or not to split files into seperate models or to store in one model as a single list.
+        Whether or not to split files into seperate models
+        or to store in one model as a single list.
 
     Returns
     -------
@@ -73,7 +79,9 @@ def get_s3_input_information(
         A list of S3 data asset ids for each S3 bucket path returned
 
     s3_paths: list of str
-        A list of either single S3 file locations (URLs) that match the query and the specified file extension or a list of S3 file locations if multiple files are returned for the file extension and split_files is False.
+        A list of either single S3 file locations (URLs) that match the query
+        and the specified file extension or a list of S3 file locations
+        if multiple files are returned for the file extension and split_files is False.
         Each location is prefixed with "s3://".
 
     s3_asset_names: list of str
@@ -91,14 +99,15 @@ def get_s3_input_information(
         projection=projection,
     )
 
-
     for record in response:
         s3_buckets.append(f"{record['location']}")
         s3_asset_ids.append(record["external_links"]["Code Ocean"][0])
         s3_asset_names.append(record["name"])
         if file_extension != "":
             file_paths = tuple(
-                s3_file_system.glob(f"{record['location']}/**/*{file_extension}")
+                s3_file_system.glob(
+                    f"{record['location']}/**/*{file_extension}"
+                )
             )
             if not file_paths:
                 raise FileNotFoundError(
@@ -110,6 +119,8 @@ def get_s3_input_information(
                     s3_paths.append(f"s3://{file}")
             else:
                 s3_paths.append([f"s3://{file}" for file in file_paths])
-            logger.info(f"Found {len(s3_paths)} *.{file_extension} files from s3")
+            logger.info(
+                f"Found {len(s3_paths)} *.{file_extension} files from s3"
+            )
 
     return s3_buckets, s3_asset_ids, s3_paths, s3_asset_names
