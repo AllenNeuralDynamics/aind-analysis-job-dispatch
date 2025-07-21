@@ -123,7 +123,7 @@ Each job input model is a JSON file containing:
 - `asset_id`: Unique identifier(s) for the data asset
 - `asset_name`: Human-readable name(s) of the data asset
 - `file_location`: Specific file path(s) when using file extension filtering
-- `distributed_parameters`: Serialized `AnalysisSpecification` paramters to run on each data asset
+- `distributed_parameters`: Serialized `AnalysisSpecification` defined in the [analysis wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper/tree/main/code/analysis_wrapper) parameters to run on each data asset
 
 
 ## Integration with Analysis Workflows
