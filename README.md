@@ -20,12 +20,15 @@ The job dispatcher:
 
 - **Parallel Workers**: Independent processing units that each handle a subset of the total jobs, enabling large-scale analysis.
 
+- **Distributed Parameters**: Analysis parameters to apply for each data asset.
+
 ## Installation and Setup
 
 This is a [Code Ocean](https://codeocean.allenneuraldynamics.org/capsule/9303168/tree) capsule. To use it:
 
 1. **Access the capsule** at the link above
 2. **Configure your query** using the app panel or by providing input files
+3. **Configure your analysis parameters** by providing the json parameters to apply to each asset
 3. **Run the capsule** to generate job input models
 4. **Use the output** with downstream analysis workflows
 
@@ -104,6 +107,13 @@ Each job input model is a JSON file containing:
     ],
     "file_location": [
         "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3/nwb/behavior_774659_2025-06-07_14-31-15.nwb"
+    ],
+    "distributed_parameters": [
+        {
+            "param_name": "foo",
+            "param_value": 10,
+            "version": 1.0
+        }
     ]
 }
 ```
@@ -113,6 +123,8 @@ Each job input model is a JSON file containing:
 - `asset_id`: Unique identifier(s) for the data asset
 - `asset_name`: Human-readable name(s) of the data asset
 - `file_location`: Specific file path(s) when using file extension filtering
+- `distributed_parameters`: Serialized `AnalysisSpecification` paramters to run on each data asset
+
 
 ## Integration with Analysis Workflows
 
@@ -120,7 +132,6 @@ This job dispatcher is typically used as the first step in a larger analysis pip
 
 1. **Job Dispatch** (this repository) → Creates job input models
 2. **Analysis Wrapper** → Processes each job using the input models  
-3. **Results Collection** → Aggregates outputs from all parallel workers
 
 See the [aind-analysis-pipeline-template](https://github.com/AllenNeuralDynamics/aind-analysis-pipeline-template) for a complete workflow example.
 
