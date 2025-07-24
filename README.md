@@ -123,7 +123,7 @@ Each job input model is a JSON file containing:
 - `asset_id`: Unique identifier(s) for the data asset
 - `asset_name`: Human-readable name(s) of the data asset
 - `file_location`: Specific file path(s) when using file extension filtering
-- `distributed_parameters`: Serialized `AnalysisSpecification` defined in the [analysis wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper/tree/main/code/analysis_wrapper) parameters to run on each data asset
+- `distributed_parameters`: Serialized `AnalysisSpecification` parameters from the `analysis_parameters.json` file to run on each data asset
 
 
 ## Integration with Analysis Workflows
@@ -165,9 +165,47 @@ python -m unittest discover tests/
 
 ## Advanced Features
 
-### Distributed Analysis Parameters
+### Analysis Parameters
 
-You can distribute different analysis parameters across jobs by including a `distributed_parameters.json` file in the `/data` folder. The dispatcher will create the Cartesian product of input data and analysis parameters.
+You can specify analysis parameters by including an `analysis_parameters.json` file in the `/data/analysis_parameters/` folder. This file contains two mutually exclusive keys:
+
+- **`analysis_parameter`**: A single dictionary following the `AnalysisSpecification` schema. Use this when you want to run the same analysis parameters on all data assets (N assets → N jobs).
+
+- **`distributed_parameters`**: A list of dictionaries, each following the `AnalysisSpecification` schema. Use this when you want to run multiple different analyses (N assets × M parameters → N×M jobs). When this key is present, `analysis_parameter` is ignored.
+
+**Example for single analysis across all assets:**
+```json
+{
+    "analysis_parameter": {
+        "analysis_name": "Unit Quality Filtering",
+        "analysis_tag": "baseline_v1.0",
+        "isi_violations_cutoff": 0.05,
+        "method": "isolation_distance"
+    }
+}
+```
+
+**Example for distributed analysis (multiple parameter sets):**
+```json
+{
+    "distributed_parameters": [
+        {
+            "analysis_name": "Unit Quality Filtering",
+            "analysis_tag": "strict_criteria_v1.0",
+            "isi_violations_cutoff": 0.03,
+            "method": "isolation_distance"
+        },
+        {
+            "analysis_name": "Unit Quality Filtering", 
+            "analysis_tag": "lenient_criteria_v1.0",
+            "isi_violations_cutoff": 0.07,
+            "method": "amplitude_cutoff"
+        }
+    ]
+}
+```
+
+Each dictionary must follow the complete `AnalysisSpecification` schema defined in the [analysis wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper/tree/main/code/analysis_wrapper).
 
 ```
 
