@@ -1,18 +1,18 @@
 # aind-analysis-job-dispatch
 
-This repository contains a **job dispatcher** that creates standardized job input models for large-scale data analysis workflows. It's designed to query a metadata database, locate relevant data assets in cloud storage, and prepare them for parallel processing by analysis workers.
+This repository contains a **job dispatcher** that creates standardized analysis dispatch models for large-scale data analysis workflows. It's designed to query a metadata database, locate relevant data assets in cloud storage, and prepare them for parallel processing by analysis workers.
 
 ## What it does
 
 The job dispatcher:
 1. **Queries** a metadata database to find datasets matching your criteria
 2. **Locates** the corresponding data files in S3 cloud storage
-3. **Creates** standardized job input models containing file locations and metadata
+3. **Creates** standardized analysis dispatch models containing file locations and metadata
 4. **Distributes** these jobs across multiple parallel workers for efficient processing
 
 ## Key Concepts
 
-- **Job Input Model**: A standardized JSON structure (`AnalysisDispatchModel`) that contains all the information needed to process a dataset, including S3 file locations, asset IDs, and analysis parameters.
+- **Analysis Dispatch Model**: A standardized JSON structure (`AnalysisDispatchModel`) that contains all the information needed to process a dataset, including S3 file locations, asset IDs, and analysis parameters.
 
 - **Data Asset**: A collection of related files (e.g., experimental recordings, processed data) stored in cloud storage with associated metadata.
 
@@ -29,20 +29,11 @@ This is a [Code Ocean](https://codeocean.allenneuraldynamics.org/capsule/9303168
 1. **Access the capsule** at the link above
 2. **Configure your query** using the app panel or by providing input files
 3. **Configure your analysis parameters** by providing the json parameters to apply to each asset
-3. **Run the capsule** to generate job input models
+3. **Run the capsule** to generate analysis dispatch models
 4. **Use the output** with downstream analysis workflows
 
 ## Usage
 
-### Command Line Arguments
-
-| Argument               | Type    | Description                                                                                                                                             |
-|------------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--docdb_query`  | string | The dictionary filter to query the document database or the path to a json containing the query.
-| `--file_extension`      | string  | The file extension to search for from the bucket returned by the query. Default is empty                                                                                                             |
-| `--split_files`   | int  | Either group the files into one list if multiple files are returned for the file extension or split into single input per file. Default is to split (1)
-| `--num_parallel_workers`    | int  |  The number of parallel workers to output, default is 50
-| `--use_data_asset_csv`  | int | Whether or not to use the data asset ids in the csv provided. Default is 0. If 1, there MUST be a csv in the `/data` folder called `data_asset_input.csv`, with the column `asset_id`.
 
 ### Input Methods
 
@@ -73,15 +64,12 @@ Provide a CSV file with specific data asset IDs:
   - `--split_files=1`: Create separate jobs for each file (default)
   - `--split_files=0`: Group all files from the same asset into one job
 
-### Custom Data Grouping
-
-If you need custom grouping logic (e.g., group by experimental session), modify the code in `run_capsule.py` around line 216 where data asset IDs are processed.
 
 ## Output
 
-### Job Input Models
+### Analysis Dispatch Models
 
-The dispatcher creates **job input models** that conform to the [`AnalysisDispatchModel`](https://github.com/AllenNeuralDynamics/aind-analysis-results/blob/main/src/aind_analysis_results/analysis_dispatch_model.py) schema. 
+The dispatcher creates **analysis dispatch models** that conform to the [`AnalysisDispatchModel`](https://github.com/AllenNeuralDynamics/analysis-pipeline-utils/blob/main/src/aind_analysis_results/analysis_dispatch_model.py) schema. 
 
 ### File Structure
 
@@ -90,20 +78,14 @@ For parallelization, the output creates:
 - **One JSON file per job** within each worker folder
 - **Unique UUID filenames** for each job
 
-### Job Input Model Content
+### Analysis Dispatch Model Content
 
-Each job input model is a JSON file containing:
+Each analysis dispatch model is a JSON file containing:
 
 ```json
 {
     "s3_location": [
         "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3"
-    ],
-    "asset_id": [
-        "50fa9416-4e21-482f-8901-889322a87ae3"
-    ],
-    "asset_name": [
-        "behavior_774659_2025-06-07_14-31-15_processed_2025-06-08_03-49-49"
     ],
     "file_location": [
         "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3/nwb/behavior_774659_2025-06-07_14-31-15.nwb"
@@ -120,17 +102,15 @@ Each job input model is a JSON file containing:
 
 **Field Descriptions:**
 - `s3_location`: Base S3 bucket path(s) containing the data asset
-- `asset_id`: Unique identifier(s) for the data asset
-- `asset_name`: Human-readable name(s) of the data asset
 - `file_location`: Specific file path(s) when using file extension filtering
-- `distributed_parameters`: Serialized `AnalysisSpecification` parameters from the `analysis_parameters.json` file to run on each data asset
+- `distributed_parameters`: Partial parameter sets from the `analysis_parameters.json` file to run on each data asset
 
 
 ## Integration with Analysis Workflows
 
 This job dispatcher is typically used as the first step in a larger analysis pipeline:
 
-1. **Job Dispatch** (this repository) → Creates job input models
+1. **Job Dispatch** (this repository) → Creates analysis dispatch models
 2. **Analysis Wrapper** → Processes each job using the input models  
 
 See the [aind-analysis-pipeline-template](https://github.com/AllenNeuralDynamics/aind-analysis-pipeline-template) for a complete workflow example.
@@ -153,8 +133,8 @@ python -m unittest discover tests/
 
 ### Code Structure
 
-- `job_dispatch/run_capsule.py`: Main entry point and orchestration logic
-- `job_dispatch/utils.py`: Database queries and S3 operations
+- `run_capsule.py`: Main entry point and orchestration logic
+- `utils.py`: Database queries and S3 operations
 - `tests/`: Unit tests for key functionality
 
 ## Troubleshooting
@@ -167,58 +147,40 @@ python -m unittest discover tests/
 
 ### Analysis Parameters
 
-You can specify analysis parameters by including an `analysis_parameters.json` file in the `/data/analysis_parameters/` folder. This file contains two mutually exclusive keys:
+You can specify analysis parameters by including an `analysis_parameters.json` file in the `/data/analysis_parameters/` folder. This file contains two keys:
 
-- **`analysis_parameter`**: A single dictionary following the `AnalysisSpecification` schema. Use this when you want to run the same analysis parameters on all data assets (N assets → N jobs).
+- **`fixed_parameters`**: A single dictionary following your analysis input schema. Use this when you want to run the same analysis parameters on all data assets (N assets → N jobs).
 
-- **`distributed_parameters`**: A list of dictionaries, each following the `AnalysisSpecification` schema. Use this when you want to run multiple different analyses (N assets × M parameters → N×M jobs). When this key is present, `analysis_parameter` is ignored.
+- **`distributed_parameters`**: A list of dictionaries, each following your analysis input schema. Use this when you want to run multiple different analyses (N assets × M parameter sets → N×M jobs). 
 
-**Example for single analysis across all assets:**
+**Example:**
 ```json
 {
-    "analysis_parameter": {
+    "fixed_parameters": {
         "analysis_name": "Unit Quality Filtering",
         "analysis_tag": "baseline_v1.0",
         "isi_violations_cutoff": 0.05,
-        "method": "isolation_distance"
-    }
-}
-```
-
-**Example for distributed analysis (multiple parameter sets):**
-```json
-{
+    },
     "distributed_parameters": [
         {
-            "analysis_name": "Unit Quality Filtering",
-            "analysis_tag": "strict_criteria_v1.0",
-            "isi_violations_cutoff": 0.03,
             "method": "isolation_distance"
         },
         {
-            "analysis_name": "Unit Quality Filtering", 
-            "analysis_tag": "lenient_criteria_v1.0",
-            "isi_violations_cutoff": 0.07,
             "method": "amplitude_cutoff"
         }
     ]
 }
 ```
 
-Each dictionary must follow the complete `AnalysisSpecification` schema defined in the [analysis wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper/tree/main/code/analysis_wrapper).
 
-```
+The analysis wrapper capsule merges these, together with any commond-line or app-panel inputs, and the final merged parameter set should follow the analysis input schema specified in that capsule.
 
 
 ## Additional Resources
 
-### Query Builder Tool
-The linked portal helps generate simple queries that can be used as input into the job dispatch. Currently under development, but example query from filling out fields: `{"data_description.project_name": "Ephys Platform", "subject.subject_id": {"$in": ["643634"]}}`.
-
-**Portal link**: https://metadata-portal.allenneuraldynamics.org/query
 
 ### Related Repositories
-- [aind-analysis-wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper): Processes the job input models created by this dispatcher
+- [aind-analysis-wrapper](https://github.com/AllenNeuralDynamics/aind-analysis-wrapper): Processes the analysis dispatch models created by this dispatcher
 - [aind-analysis-pipeline-template](https://github.com/AllenNeuralDynamics/aind-analysis-pipeline-template): Complete pipeline template combining dispatcher and wrapper
 
 
