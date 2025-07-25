@@ -107,9 +107,9 @@ def get_input_model_list(
     all_grouped_models = []
 
     for group in grouped_asset_ids:
-        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = (
+        s3_buckets, s3_paths = (
             utils.get_s3_input_information(
-                data_asset_ids=group,
+                data_asset_paths=group,
                 file_extension=file_extension,
                 split_files=split_files,
             )
@@ -121,11 +121,9 @@ def get_input_model_list(
                     all_grouped_models.append(
                         AnalysisDispatchModel(
                             s3_location=[s3_bucket],
-                            asset_id=[s3_asset_ids[index]],
                             file_location=(
                                 [s3_paths[index]] if s3_paths else None
                             ),
-                            asset_name=[s3_asset_names[index]],
                         )
                     )
                 else:
@@ -133,11 +131,9 @@ def get_input_model_list(
                         all_grouped_models.append(
                             AnalysisDispatchModel(
                                 s3_location=[s3_bucket],
-                                asset_id=[s3_asset_ids[index]],
                                 file_location=(
                                     [s3_paths[index]] if s3_paths else None
                                 ),
-                                asset_name=[s3_asset_names[index]],
                                 distributed_parameters=parameters,
                             )
                         )
@@ -146,9 +142,7 @@ def get_input_model_list(
                 all_grouped_models.append(
                     AnalysisDispatchModel(
                         s3_location=s3_buckets,
-                        asset_id=s3_asset_ids,
                         file_location=s3_paths if s3_paths else None,
-                        asset_name=s3_asset_names,
                     )
                 )
             else:
@@ -156,9 +150,7 @@ def get_input_model_list(
                     all_grouped_models.append(
                         AnalysisDispatchModel(
                             s3_location=s3_buckets,
-                            asset_id=s3_asset_ids,
                             file_location=s3_paths if s3_paths else None,
-                            asset_name=s3_asset_names,
                             distributed_parameters=parameters,
                         )
                     )
@@ -209,7 +201,7 @@ def write_input_model_list(
         logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
-def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None) -> list[str]:
+def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs) -> list[str]:
     """
     Retrieve a list of data asset IDs based on the provided arguments.
 
@@ -249,7 +241,7 @@ def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None
             query = json.loads(args.docdb_query)
 
         logger.info(f"Query {query}")
-        data_asset_ids = utils.get_data_asset_ids_from_query(query)
+        data_asset_ids = utils.get_data_asset_ids_from_query(query, group_by)
 
     logger.info(f"Returned {len(data_asset_ids)} records")
     return data_asset_ids
@@ -265,9 +257,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(args)
 
-    # IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
-    # OR RESTRUCTURE FLAT LIST INTO GROUPS
-    data_asset_ids = get_data_asset_ids(**args)
+    data_asset_ids = get_data_asset_ids(**vars(args))
 
     distributed_analysis_parameters = None
     distributed_analysis_parameters_path = tuple(

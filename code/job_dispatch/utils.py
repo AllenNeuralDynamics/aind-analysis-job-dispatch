@@ -1,6 +1,7 @@
 import logging
 import pathlib
-from typing import List, Union
+import json
+from typing import List, Union, Optional
 
 import s3fs
 from aind_data_access_api.document_db import MetadataDbClient
@@ -36,13 +37,14 @@ def get_data_asset_ids_from_query(query: dict, group_by: Optional[str]):
         A list of data asset IDs that match the provided query criteria.
     """
     asset_id_prefix = "external_links.Code Ocean.0"
-    if group_by:
+    asset_id_prefix = "location"
+    if True:
         response = docdb_api_client.aggregate_docdb_records(
             pipeline=[
-                {'$match':query},
-                {'$group':{
-                    "_id": f"${group_by}",
-                    asset_id_prefix: {"$push$": f"${asset_id_prefix}"}
+                {'$match': query},
+                {'$group': {
+                    "_id": "$"+group_by if group_by else "$_id",
+                    "asset_id": {"$push": f"${asset_id_prefix}"}
                     }
                 }
             ]
@@ -53,11 +55,11 @@ def get_data_asset_ids_from_query(query: dict, group_by: Optional[str]):
         )
 
 
-    return [x[asset_id_prefix] for x in response]
+    return [x["asset_id"] for x in response]
 
 
 def get_s3_input_information(
-    data_asset_ids: list[str],
+    data_asset_paths: list[str],
     file_extension: str = "",
     split_files: bool = True,
 ) -> tuple[List[str], List[str], List[Union[str, List[str]]], List[str]]:
@@ -97,39 +99,30 @@ def get_s3_input_information(
         A list with the name of each asset
     """
     s3_paths = []
-    s3_buckets = []
-    s3_asset_ids = []
-    s3_asset_names = []
+    s3_file_paths = []
     s3_file_system = s3fs.S3FileSystem()
 
-    projection = {"location": 1, "external_links": 1, "name": 1}
-    response = docdb_api_client.retrieve_docdb_records(
-        filter_query={"external_links.Code Ocean": {"$in": data_asset_ids}},
-        projection=projection,
-    )
-
-    for record in response:
-        s3_buckets.append(f"{record['location']}")
-        s3_asset_ids.append(record["external_links"]["Code Ocean"][0])
-        s3_asset_names.append(record["name"])
+    for location in data_asset_paths:
         if file_extension != "":
             file_paths = tuple(
                 s3_file_system.glob(
-                    f"{record['location']}/**/*{file_extension}"
+                    f"{location}/**/*{file_extension}"
                 )
             )
             if not file_paths:
-                raise FileNotFoundError(
-                    f"No {file_extension} found in {record['location']}"
+                logging.warning(
+                    f"No {file_extension} found in {location} - skipping."
                 )
-
+                continue
+            
+            s3_paths.append(location)
             if split_files:
                 for file in file_paths:
-                    s3_paths.append(f"s3://{file}")
+                    s3_file_paths.append(f"s3://{file}")
             else:
-                s3_paths.append([f"s3://{file}" for file in file_paths])
+                s3_file_paths.append([f"s3://{file}" for file in file_paths])
             logger.info(
-                f"Found {len(s3_paths)} *.{file_extension} files from s3"
+                f"Found {len(file_paths)} *{file_extension} files from s3"
             )
 
-    return s3_buckets, s3_asset_ids, s3_paths, s3_asset_names
+    return s3_paths, s3_file_paths
