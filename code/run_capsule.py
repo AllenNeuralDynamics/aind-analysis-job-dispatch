@@ -38,7 +38,7 @@ def get_input_parser() -> argparse.ArgumentParser:
                               or not to find the file extension
         - `--split_files`: Whether or not to group the files into a
                            single model or to split into seperate
-        - `--num_parallel_workers`: The number of parallel workers to output,
+        - `--max_jobs`: The number of parallel workers to output,
                                     default is 50.
                                     min(length of results returned in query, 50).
 
@@ -49,7 +49,7 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--use_data_asset_csv", type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
-    parser.add_argument("--num_parallel_workers", type=int, default=50)
+    parser.add_argument("--max_jobs", type=int, default=50)
 
     return parser
 
@@ -107,9 +107,9 @@ def get_input_model_list(
     all_grouped_models = []
 
     for group in grouped_asset_ids:
-        s3_buckets, s3_asset_ids, s3_paths, s3_asset_names = (
+        s3_buckets, s3_paths = (
             utils.get_s3_input_information(
-                data_asset_ids=group,
+                data_asset_paths=group,
                 file_extension=file_extension,
                 split_files=split_files,
             )
@@ -121,11 +121,9 @@ def get_input_model_list(
                     all_grouped_models.append(
                         AnalysisDispatchModel(
                             s3_location=[s3_bucket],
-                            asset_id=[s3_asset_ids[index]],
                             file_location=(
                                 [s3_paths[index]] if s3_paths else None
                             ),
-                            asset_name=[s3_asset_names[index]],
                         )
                     )
                 else:
@@ -133,11 +131,9 @@ def get_input_model_list(
                         all_grouped_models.append(
                             AnalysisDispatchModel(
                                 s3_location=[s3_bucket],
-                                asset_id=[s3_asset_ids[index]],
                                 file_location=(
                                     [s3_paths[index]] if s3_paths else None
                                 ),
-                                asset_name=[s3_asset_names[index]],
                                 distributed_parameters=parameters,
                             )
                         )
@@ -146,9 +142,7 @@ def get_input_model_list(
                 all_grouped_models.append(
                     AnalysisDispatchModel(
                         s3_location=s3_buckets,
-                        asset_id=s3_asset_ids,
                         file_location=s3_paths if s3_paths else None,
-                        asset_name=s3_asset_names,
                     )
                 )
             else:
@@ -156,9 +150,7 @@ def get_input_model_list(
                     all_grouped_models.append(
                         AnalysisDispatchModel(
                             s3_location=s3_buckets,
-                            asset_id=s3_asset_ids,
                             file_location=s3_paths if s3_paths else None,
-                            asset_name=s3_asset_names,
                             distributed_parameters=parameters,
                         )
                     )
@@ -168,7 +160,7 @@ def get_input_model_list(
 
 def write_input_model_list(
     input_model_list: list[AnalysisDispatchModel],
-    num_parallel_workers: int,
+    max_jobs: int,
 ) -> None:
     """
     Distributes a list of input models across a specified number of parallel workers,
@@ -179,7 +171,7 @@ def write_input_model_list(
     input_model_list : list of AnalysisDispatchModel
         A list of AnalysisDispatchModel instances to be processed and written to disk.
 
-    num_parallel_workers : int
+    max_jobs : int
         The maximum number of parallel workers
         that can be used to process the input models.
 
@@ -191,7 +183,7 @@ def write_input_model_list(
     """
 
     # Step 1: Split into worker batches
-    num_actual_workers = min(len(input_model_list), num_parallel_workers)
+    num_actual_workers = min(len(input_model_list), max_jobs)
     jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
 
     # Step 2: Write output per job inside worker folder
@@ -209,20 +201,19 @@ def write_input_model_list(
         logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
-def get_data_asset_ids(args) -> list[str]:
+def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs) -> list[str]:
     """
     Retrieve a list of data asset IDs based on the provided arguments.
 
     Parameters
     ----------
-    args : input arguments for determining which input to use - query or list of ids
 
     Returns
     -------
     list of str
         A list of data asset ID strings that match the provided filters.
     """
-    if bool(args.use_data_asset_csv):
+    if use_data_asset_csv:
         data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
         if not data_asset_ids_path:
             raise FileNotFoundError(
@@ -235,7 +226,7 @@ def get_data_asset_ids(args) -> list[str]:
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
 
-    if args.docdb_query and not bool(args.use_data_asset_csv):
+    elif docdb_query:
         logger.info("Using query")
         if (
             isinstance(args.docdb_query, str)
@@ -250,7 +241,7 @@ def get_data_asset_ids(args) -> list[str]:
             query = json.loads(args.docdb_query)
 
         logger.info(f"Query {query}")
-        data_asset_ids = utils.get_data_asset_ids_from_query(query)
+        data_asset_ids = utils.get_data_asset_ids_from_query(query, group_by)
 
     logger.info(f"Returned {len(data_asset_ids)} records")
     return data_asset_ids
@@ -266,28 +257,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(args)
 
-    # IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
-    # OR RESTRUCTURE FLAT LIST INTO GROUPS
-    data_asset_ids = get_data_asset_ids(args)
+    data_asset_ids = get_data_asset_ids(**vars(args))
 
-    distributed_analysis_parameters = None
-    distributed_analysis_parameters_path = tuple(
-        utils.DATA_PATH.glob("distributed_parameters.json")
-    )
-    if distributed_analysis_parameters_path:
-        with open(distributed_analysis_parameters_path[0], "r") as f:
-            distributed_analysis_parameters = json.load(f)
-        logger.info(
-            f"Found distributed analysis parameters json file "
-            f"with {len(distributed_analysis_parameters)} list of analyses "
-            "Will compute product over parameters"
-        )
+    analysis_parameters_path = utils.DATA_PATH/"analysis_parameters.json"
+    
+    if analysis_parameters_path.exists():
+        with open(analysis_parameters_path, "r") as f:
+            distributed_parameters = json.load(f).get("distributed_parameters")
+        if distributed_parameters:
+            logger.info(
+                f"Found analysis parameters json file "
+                f"with {len(distributed_analysis_parameters)} sets of parameters "
+                "Will compute product over parameters"
+            )
 
     input_model_list = get_input_model_list(
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
-        distributed_analysis_parameters=distributed_analysis_parameters,
+        distributed_analysis_parameters=distributed_parameters,
     )
 
-    write_input_model_list(input_model_list, args.num_parallel_workers)
+    write_input_model_list(input_model_list, args.max_jobs)
