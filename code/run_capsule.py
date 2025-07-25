@@ -271,7 +271,8 @@ if __name__ == "__main__":
                 f"with {len(distributed_analysis_parameters)} sets of parameters "
                 "Will compute product over parameters"
             )
-
+    else:
+        distributed_parameters = None
     input_model_list = get_input_model_list(
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
