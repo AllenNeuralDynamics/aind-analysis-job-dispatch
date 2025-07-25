@@ -14,7 +14,7 @@
 			"id": "fBA9180uNtuYPiPF",
 			"name": "split files",
 			"param_name": "split_files",
-			"description": "Group the files into one list if multiple files are returned for the file extension in the same bucket or split into one per file. Default is split",
+			"description": "Split vs group the files across jobs if multiple relevant files are found per asset. Default is split",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "1",
@@ -22,22 +22,32 @@
 		},
 		{
 			"id": "AsuiaZ4WWTPFPt6f",
-			"name": "number of workers",
-			"param_name": "num_parallel_workers",
-			"description": "The number of parallel workers to send to wrapper capsule. Determined by min(length of results returned in query, 50).",
-			"help_text": "The number of parallel workers to send to wrapper capsule",
+			"name": "maximum number of jobs",
+			"param_name": "max_jobs",
+			"description": "The number of distinct jobs to send to wrapper capsule. If the query returns more results they will be grouped, with single jobs processing multiple records in series.",
+			"help_text": "The number of distinct jobs to send to wrapper capsule",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "50"
 		},
 		{
 			"id": "ssE0ZeX5hvqsvvPy",
-			"name": "docdb query",
+			"name": "docDB query",
 			"param_name": "docdb_query",
 			"description": "The query as a json string for fetching data assets, or path to json file containing the query",
 			"help_text": "The query as a dictionary for fetching data assets. Or the path to a json file with the query.",
 			"type": "text",
 			"value_type": "string"
+		},
+		{
+			"id": "ssE03kp5hvqsvvPy",
+			"name": "docDB group by field",
+			"param_name": "group_by",
+			"description": "Reference to a single docDB record field to use to group records into jobs. For example 'subject.subject_id'",
+			"help_text": "Reference to a single docDB record field to use to group records into jobs",
+			"type": "text",
+			"value_type": "string",
+			"default_value": ""
 		},
 		{
 			"id": "v2lGrCkeFIRLrgjl",

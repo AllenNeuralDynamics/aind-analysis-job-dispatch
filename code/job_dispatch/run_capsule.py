@@ -38,7 +38,7 @@ def get_input_parser() -> argparse.ArgumentParser:
                               or not to find the file extension
         - `--split_files`: Whether or not to group the files into a
                            single model or to split into seperate
-        - `--num_parallel_workers`: The number of parallel workers to output,
+        - `--max_jobs`: The number of parallel workers to output,
                                     default is 50.
                                     min(length of results returned in query, 50).
 
@@ -49,7 +49,7 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--use_data_asset_csv", type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
-    parser.add_argument("--num_parallel_workers", type=int, default=50)
+    parser.add_argument("--max_jobs", type=int, default=50)
 
     return parser
 
@@ -168,7 +168,7 @@ def get_input_model_list(
 
 def write_input_model_list(
     input_model_list: list[AnalysisDispatchModel],
-    num_parallel_workers: int,
+    max_jobs: int,
 ) -> None:
     """
     Distributes a list of input models across a specified number of parallel workers,
@@ -179,7 +179,7 @@ def write_input_model_list(
     input_model_list : list of AnalysisDispatchModel
         A list of AnalysisDispatchModel instances to be processed and written to disk.
 
-    num_parallel_workers : int
+    max_jobs : int
         The maximum number of parallel workers
         that can be used to process the input models.
 
@@ -191,7 +191,7 @@ def write_input_model_list(
     """
 
     # Step 1: Split into worker batches
-    num_actual_workers = min(len(input_model_list), num_parallel_workers)
+    num_actual_workers = min(len(input_model_list), max_jobs)
     jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
 
     # Step 2: Write output per job inside worker folder
@@ -289,4 +289,4 @@ if __name__ == "__main__":
         distributed_analysis_parameters=distributed_analysis_parameters,
     )
 
-    write_input_model_list(input_model_list, args.num_parallel_workers)
+    write_input_model_list(input_model_list, args.max_jobs)
