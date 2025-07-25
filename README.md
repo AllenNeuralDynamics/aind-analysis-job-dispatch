@@ -37,7 +37,6 @@ For parallelization, the output will be a folder for each worker. The output wil
 }
 ```
 
-```
 
 
 ### Metadata Query Generator (In development)
