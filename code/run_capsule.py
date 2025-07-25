@@ -259,24 +259,23 @@ if __name__ == "__main__":
 
     data_asset_ids = get_data_asset_ids(**vars(args))
 
-    distributed_analysis_parameters = None
-    distributed_analysis_parameters_path = tuple(
-        utils.DATA_PATH.glob("distributed_parameters.json")
-    )
-    if distributed_analysis_parameters_path:
-        with open(distributed_analysis_parameters_path[0], "r") as f:
-            distributed_analysis_parameters = json.load(f)
-        logger.info(
-            f"Found distributed analysis parameters json file "
-            f"with {len(distributed_analysis_parameters)} list of analyses "
-            "Will compute product over parameters"
-        )
+    analysis_parameters_path = utils.DATA_PATH/"analysis_parameters.json"
+    
+    if analysis_parameters_path.exists():
+        with open(analysis_parameters_path, "r") as f:
+            distributed_parameters = json.load(f).get("distributed_parameters")
+        if distributed_parameters:
+            logger.info(
+                f"Found analysis parameters json file "
+                f"with {len(distributed_analysis_parameters)} sets of parameters "
+                "Will compute product over parameters"
+            )
 
     input_model_list = get_input_model_list(
         data_asset_ids=data_asset_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
-        distributed_analysis_parameters=distributed_analysis_parameters,
+        distributed_analysis_parameters=distributed_parameters,
     )
 
     write_input_model_list(input_model_list, args.max_jobs)
