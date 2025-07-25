@@ -21,7 +21,7 @@ docdb_api_client = MetadataDbClient(
 )
 
 
-def get_data_asset_ids_from_query(query: dict):
+def get_data_asset_ids_from_query(query: dict, group_by: Optional[str]):
     """
     Retrieve data asset IDs based on query passed in.
 
@@ -35,16 +35,25 @@ def get_data_asset_ids_from_query(query: dict):
     list of str
         A list of data asset IDs that match the provided query criteria.
     """
-    projection = {"external_links": 1}
-    response = docdb_api_client.retrieve_docdb_records(
-        filter_query=query, projection=projection
-    )
+    asset_id_prefix = "external_links.Code Ocean.0"
+    if group_by:
+        response = docdb_api_client.aggregate_docdb_records(
+            pipeline=[
+                {'$match':query},
+                {'$group':{
+                    "_id": f"${group_by}",
+                    asset_id_prefix: {"$push$": f"${asset_id_prefix}"}
+                    }
+                }
+            ]
+        )
+    else:
+        response = docdb_api_client.retrieve_docdb_records(
+            filter_query=query, projection={asset_id_prefix: 1}
+        )
 
-    data_asset_ids = []
-    for record in response:
-        data_asset_ids.append(record["external_links"]["Code Ocean"][0])
 
-    return data_asset_ids
+    return [x[asset_id_prefix] for x in response]
 
 
 def get_s3_input_information(

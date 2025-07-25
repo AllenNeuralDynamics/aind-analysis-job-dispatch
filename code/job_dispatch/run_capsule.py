@@ -209,20 +209,19 @@ def write_input_model_list(
         logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
-def get_data_asset_ids(args) -> list[str]:
+def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None) -> list[str]:
     """
     Retrieve a list of data asset IDs based on the provided arguments.
 
     Parameters
     ----------
-    args : input arguments for determining which input to use - query or list of ids
 
     Returns
     -------
     list of str
         A list of data asset ID strings that match the provided filters.
     """
-    if bool(args.use_data_asset_csv):
+    if use_data_asset_csv:
         data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
         if not data_asset_ids_path:
             raise FileNotFoundError(
@@ -235,7 +234,7 @@ def get_data_asset_ids(args) -> list[str]:
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
 
-    if args.docdb_query and not bool(args.use_data_asset_csv):
+    elif docdb_query:
         logger.info("Using query")
         if (
             isinstance(args.docdb_query, str)
@@ -268,7 +267,7 @@ if __name__ == "__main__":
 
     # IF YOU WANT TO GROUP DATA ASSETS, REPLACE THIS TO GET GROUPED IDS
     # OR RESTRUCTURE FLAT LIST INTO GROUPS
-    data_asset_ids = get_data_asset_ids(args)
+    data_asset_ids = get_data_asset_ids(**args)
 
     distributed_analysis_parameters = None
     distributed_analysis_parameters_path = tuple(
