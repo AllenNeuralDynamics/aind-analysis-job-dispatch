@@ -11,10 +11,10 @@ from typing import Any, Union
 
 import numpy as np
 import pandas as pd
-from aind_analysis_results.analysis_dispatch_model import AnalysisDispatchModel
+from analysis_pipeline_utils.analysis_dispatch_model import AnalysisDispatchModel
 from tqdm import tqdm
 
-from job_dispatch import utils
+import utils
 
 logger = logging.getLogger(__name__)
 
