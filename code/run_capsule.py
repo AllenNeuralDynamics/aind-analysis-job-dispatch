@@ -50,6 +50,7 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
     parser.add_argument("--max_jobs", type=int, default=50)
+    parser.add_argument("--group_by", type=str, default="",)
 
     return parser
 
