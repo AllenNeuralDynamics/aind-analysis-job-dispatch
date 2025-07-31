@@ -189,6 +189,7 @@ def write_input_model_list(
 
     num_actual_workers = math.ceil(len(input_model_list) / tasks_per_job)
     jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
+    logger.info(f"Tasks per job: {tasks_per_job}")
 
     # Step 2: Write output per job inside worker folder
     for worker_id, job_group in enumerate(
