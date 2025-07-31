@@ -166,7 +166,7 @@ def write_input_model_list(
     input_model_list: list[AnalysisDispatchModel], tasks_per_job: int = 1
 ) -> None:
     """
-    Distributes a list of input models across a specified number of parallel workers,
+    Distributes a list of input models across a specified number of tasks per job,
     writes the models to disk in JSON format, and logs the progress.
 
     Parameters
@@ -184,34 +184,34 @@ def write_input_model_list(
         It writes JSON files to disk for each input model.
     """
 
-    # Step 1: Split into worker batches
+    # Step 1: Split into tasks per job batches
     if tasks_per_job < 1:
         raise ValueError("tasks_per_job must be at least 1")
 
     number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
-    jobs_for_each_worker = np.array_split(input_model_list, number_of_jobs)
+    tasks_for_each_job = np.array_split(input_model_list, number_of_jobs)
     logger.info(f"Tasks per job: {tasks_per_job}")
 
-    # Step 2: Write output per job inside worker folder
-    for worker_id, job_group in enumerate(
-        tqdm(jobs_for_each_worker, desc="Distributing jobs")
+    # Step 2: Write output per task inside job folder
+    for job_id, task_group in enumerate(
+        tqdm(tasks_for_each_job, desc="Distributing jobs")
     ):
-        worker_folder = args.output_directory / f"{worker_id}"
-        worker_folder.mkdir(parents=True, exist_ok=True)
+        job_folder = args.output_directory / f"{job_id}"
+        job_folder.mkdir(parents=True, exist_ok=True)
 
-        for job_id, job_model in enumerate(job_group):
+        for task_id, task_model in enumerate(task_group):
             # Write input model
-            with open(worker_folder / f"{uuid.uuid4()}.json", "w") as f:
-                f.write(job_model.model_dump_json(indent=4))
+            with open(job_folder / f"{uuid.uuid4()}.json", "w") as f:
+                f.write(task_model.model_dump_json(indent=4))
 
-        logger.info(f"{len(job_group)} jobs written to {worker_folder}")
+        logger.info(f"{len(task_group)} tasks written to {job_folder}")
 
 
-def get_data_asset_ids(
+def get_data_asset_paths(
     use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs
 ) -> list[str]:
     """
-    Retrieve a list of data asset IDs based on the provided arguments.
+    Retrieve a list of data asset paths based on the provided arguments.
 
     Parameters
     ----------
@@ -222,7 +222,7 @@ def get_data_asset_ids(
         A list of data asset ID strings that match the provided filters.
     """
     if use_data_asset_csv:
-        data_asset_ids_path = tuple(utils.DATA_PATH.glob("*.csv"))
+        data_asset_ids_path = tuple(args.input_directory.glob("*.csv"))
         if not data_asset_ids_path:
             raise FileNotFoundError(
                 "Using data asset ids, but no path to csv provided"
@@ -233,6 +233,15 @@ def get_data_asset_ids(
             raise ValueError("Asset id column is empty")
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
+        data_asset_paths = utils.get_data_asset_ids_from_query(
+            query = {
+                "external_links.Code Ocean.0": {
+                    "$in": data_asset_ids
+                }
+            },
+            group_by=args.group_by
+        )
+
 
     elif docdb_query:
         logger.info("Using query")
@@ -249,10 +258,10 @@ def get_data_asset_ids(
             query = json.loads(args.docdb_query)
 
         logger.info(f"Query {query}")
-        data_asset_ids = utils.get_data_asset_ids_from_query(query, group_by)
+        data_asset_paths = utils.get_data_asset_ids_from_query(query, group_by)
 
-    logger.info(f"Returned {len(data_asset_ids)} records")
-    return data_asset_ids
+    logger.info(f"Returned {len(data_asset_paths)} records")
+    return data_asset_paths
 
 
 if __name__ == "__main__":
@@ -264,7 +273,7 @@ if __name__ == "__main__":
     args = InputSettings()
     logger.info(args)
 
-    data_asset_ids = get_data_asset_ids(**vars(args))
+    data_asset_paths = get_data_asset_paths(**vars(args))
 
     analysis_parameters_path = args.input_directory / "analysis_parameters.json"
 
@@ -280,7 +289,7 @@ if __name__ == "__main__":
     else:
         distributed_parameters = None
     input_model_list = get_input_model_list(
-        data_asset_ids=data_asset_ids,
+        data_asset_ids=data_asset_paths,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
         distributed_analysis_parameters=distributed_parameters,
