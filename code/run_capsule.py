@@ -2,7 +2,6 @@
 Generates the input analysis model from the user provided query
 """
 
-import argparse
 import json
 import logging
 import math
@@ -12,7 +11,11 @@ from typing import Any, Union
 
 import numpy as np
 import pandas as pd
-from analysis_pipeline_utils.analysis_dispatch_model import AnalysisDispatchModel
+from analysis_pipeline_utils.analysis_dispatch_model import (
+    AnalysisDispatchModel,
+)
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from tqdm import tqdm
 
 import utils
@@ -20,40 +23,38 @@ import utils
 logger = logging.getLogger(__name__)
 
 
-def get_input_parser() -> argparse.ArgumentParser:
+class InputSettings(BaseSettings, cli_parse_args=True):
     """
-    Creates and returns an argument parser for input arguments.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    argparse.ArgumentParser
-        A configured ArgumentParser object with predefined command-line arguments for:
-        - `--docdb_query`: A json string of query for getting data assets
-        - `--use_data_asset_csv`: If true, read in list of data asset ids
-                                  and use those instead of query
-        - `--file_extension`: A string argument for specifying whether
-                              or not to find the file extension
-        - `--split_files`: Whether or not to group the files into a
-                           single model or to split into seperate
-        - `--tasks_per_job`: The number tasks per job, calculated 
-                             by ceiling(number of records / tasks_per_job)
-                             default is 1.
-
+    Pydantic settings model for input arguments.
     """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--docdb_query", type=str, default="")
-    parser.add_argument("--use_data_asset_csv", type=int, default=0)
-    parser.add_argument("--file_extension", type=str, default="")
-    parser.add_argument("--split_files", type=int, default=1)
-    parser.add_argument("--tasks_per_job", type=int, default=1)
-    parser.add_argument("--group_by", type=str, default="",)
-
-    return parser
+    docdb_query: str = Field(
+        default="",
+        description=(
+            "JSON string of query "
+            "for getting data assets or path to query json file",
+        )[0]
+    )
+    use_data_asset_csv: int = Field(
+        default=0,
+        description="Use CSV list of data asset IDs instead of a query",
+    )
+    file_extension: str = Field(
+        default="", description="Specify file extension filter"
+    )
+    split_files: int = Field(
+        default=1, description="Whether to split files into separate models"
+    )
+    tasks_per_job: int = Field(
+        default=1, description="Number of tasks per job"
+    )
+    group_by: str = Field(default="", description="Field to group data by")
+    input_directory: Path = Field(
+        default=Path("/data"), description="Input directory"
+    )
+    output_directory: Path = Field(
+        default=Path("/results"), description="Output directory"
+    )
 
 
 def get_input_model_list(
@@ -109,14 +110,15 @@ def get_input_model_list(
     all_grouped_models = []
 
     for group in grouped_asset_ids:
-        s3_buckets, s3_paths = (
-            utils.get_s3_input_information(
-                data_asset_paths=group,
-                file_extension=file_extension,
-                split_files=split_files,
-            )
+        s3_buckets, s3_paths = utils.get_s3_input_information(
+            data_asset_paths=group,
+            file_extension=file_extension,
+            split_files=split_files,
         )
 
+        if not s3_buckets:
+            continue
+            
         if is_flat:
             for index, s3_bucket in enumerate(s3_buckets):
                 if distributed_analysis_parameters is None:
@@ -161,8 +163,7 @@ def get_input_model_list(
 
 
 def write_input_model_list(
-    input_model_list: list[AnalysisDispatchModel],
-    tasks_per_job: int = 1
+    input_model_list: list[AnalysisDispatchModel], tasks_per_job: int = 1
 ) -> None:
     """
     Distributes a list of input models across a specified number of parallel workers,
@@ -174,7 +175,7 @@ def write_input_model_list(
         A list of AnalysisDispatchModel instances to be processed and written to disk.
 
     tasks_per_job: int = 1 : int
-        The number of tasks to group when writing
+        The number of tasks to group per job when dispatching
 
     Returns
     -------
@@ -187,15 +188,15 @@ def write_input_model_list(
     if tasks_per_job < 1:
         raise ValueError("tasks_per_job must be at least 1")
 
-    num_actual_workers = math.ceil(len(input_model_list) / tasks_per_job)
-    jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
+    number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
+    jobs_for_each_worker = np.array_split(input_model_list, number_of_jobs)
     logger.info(f"Tasks per job: {tasks_per_job}")
 
     # Step 2: Write output per job inside worker folder
     for worker_id, job_group in enumerate(
         tqdm(jobs_for_each_worker, desc="Distributing jobs")
     ):
-        worker_folder = utils.RESULTS_PATH / f"{worker_id}"
+        worker_folder = args.output_directory / f"{worker_id}"
         worker_folder.mkdir(parents=True, exist_ok=True)
 
         for job_id, job_model in enumerate(job_group):
@@ -206,7 +207,9 @@ def write_input_model_list(
         logger.info(f"{len(job_group)} jobs written to {worker_folder}")
 
 
-def get_data_asset_ids(use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs) -> list[str]:
+def get_data_asset_ids(
+    use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs
+) -> list[str]:
     """
     Retrieve a list of data asset IDs based on the provided arguments.
 
@@ -258,14 +261,13 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    parser = get_input_parser()
-    args = parser.parse_args()
+    args = InputSettings()
     logger.info(args)
 
     data_asset_ids = get_data_asset_ids(**vars(args))
 
-    analysis_parameters_path = utils.DATA_PATH/"analysis_parameters.json"
-    
+    analysis_parameters_path = args.input_directory / "analysis_parameters.json"
+
     if analysis_parameters_path.exists():
         with open(analysis_parameters_path, "r") as f:
             distributed_parameters = json.load(f).get("distributed_parameters")

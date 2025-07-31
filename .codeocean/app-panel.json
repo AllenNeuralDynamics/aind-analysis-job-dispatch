@@ -24,7 +24,7 @@
 			"id": "AsuiaZ4WWTPFPt6f",
 			"name": "tasks per job",
 			"param_name": "tasks_per_job",
-			"description": "The number tasks per job. Default is 1 task per job. For example, if this is set to 3 and there are 10 tasks, then there will be 3 jobs. ",
+			"description": "The number of tasks per job. Default is 1 task per job. For example, if this is set to 3 and there are 10 tasks, then there will be 4 jobs. ",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "1"
