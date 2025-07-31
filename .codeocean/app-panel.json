@@ -22,13 +22,12 @@
 		},
 		{
 			"id": "AsuiaZ4WWTPFPt6f",
-			"name": "maximum number of jobs",
-			"param_name": "max_jobs",
-			"description": "The number of distinct jobs to send to wrapper capsule. If the query returns more results they will be grouped, with single jobs processing multiple records in series.",
-			"help_text": "The number of distinct jobs to send to wrapper capsule",
+			"name": "tasks per job",
+			"param_name": "tasks_per_job",
+			"description": "The number of tasks per job. Default is 1 task per job. For example, if this is set to 3 and there are 10 tasks, then there will be 4 jobs. ",
 			"type": "text",
 			"value_type": "integer",
-			"default_value": "50"
+			"default_value": "1"
 		},
 		{
 			"id": "ssE0ZeX5hvqsvvPy",
@@ -46,8 +45,7 @@
 			"description": "Reference to a single docDB record field to use to group records into jobs. For example 'subject.subject_id'",
 			"help_text": "Reference to a single docDB record field to use to group records into jobs",
 			"type": "text",
-			"value_type": "string",
-			"default_value": ""
+			"value_type": "string"
 		},
 		{
 			"id": "v2lGrCkeFIRLrgjl",
