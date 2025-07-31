@@ -5,6 +5,7 @@ Generates the input analysis model from the user provided query
 import argparse
 import json
 import logging
+import math
 import uuid
 from pathlib import Path
 from typing import Any, Union
@@ -38,9 +39,9 @@ def get_input_parser() -> argparse.ArgumentParser:
                               or not to find the file extension
         - `--split_files`: Whether or not to group the files into a
                            single model or to split into seperate
-        - `--max_jobs`: The number of parallel workers to output,
-                                    default is 50.
-                                    min(length of results returned in query, 50).
+        - `--tasks_per_job`: The number tasks per job, calculated 
+                             by ceiling(number of records / tasks_per_job)
+                             default is 1.
 
     """
 
@@ -49,7 +50,7 @@ def get_input_parser() -> argparse.ArgumentParser:
     parser.add_argument("--use_data_asset_csv", type=int, default=0)
     parser.add_argument("--file_extension", type=str, default="")
     parser.add_argument("--split_files", type=int, default=1)
-    parser.add_argument("--max_jobs", type=int, default=50)
+    parser.add_argument("--tasks_per_job", type=int, default=1)
     parser.add_argument("--group_by", type=str, default="",)
 
     return parser
@@ -161,7 +162,7 @@ def get_input_model_list(
 
 def write_input_model_list(
     input_model_list: list[AnalysisDispatchModel],
-    max_jobs: int,
+    tasks_per_job: int = 1
 ) -> None:
     """
     Distributes a list of input models across a specified number of parallel workers,
@@ -172,9 +173,8 @@ def write_input_model_list(
     input_model_list : list of AnalysisDispatchModel
         A list of AnalysisDispatchModel instances to be processed and written to disk.
 
-    max_jobs : int
-        The maximum number of parallel workers
-        that can be used to process the input models.
+    tasks_per_job: int = 1 : int
+        The number of tasks to group when writing
 
     Returns
     -------
@@ -184,7 +184,10 @@ def write_input_model_list(
     """
 
     # Step 1: Split into worker batches
-    num_actual_workers = min(len(input_model_list), max_jobs)
+    if tasks_per_job < 1:
+        raise ValueError("tasks_per_job must be at least 1")
+
+    num_actual_workers = math.ceil(len(input_model_list) / tasks_per_job)
     jobs_for_each_worker = np.array_split(input_model_list, num_actual_workers)
 
     # Step 2: Write output per job inside worker folder
@@ -268,7 +271,7 @@ if __name__ == "__main__":
         if distributed_parameters:
             logger.info(
                 f"Found analysis parameters json file "
-                f"with {len(distributed_analysis_parameters)} sets of parameters "
+                f"with {len(distributed_parameters)} sets of parameters "
                 "Will compute product over parameters"
             )
     else:
@@ -280,4 +283,4 @@ if __name__ == "__main__":
         distributed_analysis_parameters=distributed_parameters,
     )
 
-    write_input_model_list(input_model_list, args.max_jobs)
+    write_input_model_list(input_model_list, args.tasks_per_job)

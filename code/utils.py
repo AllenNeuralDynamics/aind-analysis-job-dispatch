@@ -103,6 +103,8 @@ def get_s3_input_information(
     s3_file_system = s3fs.S3FileSystem()
 
     for location in data_asset_paths:
+        s3_paths.append(location)
+
         if file_extension != "":
             file_paths = tuple(
                 s3_file_system.glob(
@@ -115,7 +117,6 @@ def get_s3_input_information(
                 )
                 continue
             
-            s3_paths.append(location)
             if split_files:
                 for file in file_paths:
                     s3_file_paths.append(f"s3://{file}")
