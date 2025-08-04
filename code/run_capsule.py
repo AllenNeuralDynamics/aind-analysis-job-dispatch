@@ -197,7 +197,7 @@ def write_input_model_list(
         raise ValueError("tasks_per_job must be at least 1")
 
     logger.info(
-        "Max numbr of tasks to dispatch " 
+        "Max number of tasks to dispatch " 
         f"{max_number_of_tasks_dispatched}"
     )
     input_model_list = input_model_list[:max_number_of_tasks_dispatched]
