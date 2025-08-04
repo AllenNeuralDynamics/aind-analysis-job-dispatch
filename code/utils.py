@@ -1,5 +1,4 @@
 import logging
-import pathlib
 from typing import List, Optional, Union
 
 import s3fs
@@ -90,9 +89,13 @@ def get_s3_input_information(
 
     for location in data_asset_paths:
         if file_extension != "":
-            file_paths = tuple(s3_file_system.glob(f"{location}/**/*{file_extension}"))
+            file_paths = tuple(
+                s3_file_system.glob(f"{location}/**/*{file_extension}")
+            )
             if not file_paths:
-                logging.warning(f"No {file_extension} found in {location} - skipping.")
+                logging.warning(
+                    f"No {file_extension} found in {location} - skipping."
+                )
                 continue
 
             if split_files:
@@ -100,7 +103,9 @@ def get_s3_input_information(
                     s3_file_paths.append(f"s3://{file}")
             else:
                 s3_file_paths.append([f"s3://{file}" for file in file_paths])
-            logger.info(f"Found {len(file_paths)} *{file_extension} files from s3")
+            logger.info(
+                f"Found {len(file_paths)} *{file_extension} files from s3"
+            )
             s3_paths.append(location)
         else:
             s3_paths.append(location)
