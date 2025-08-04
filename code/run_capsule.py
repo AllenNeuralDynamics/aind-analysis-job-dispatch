@@ -48,6 +48,9 @@ class InputSettings(BaseSettings, cli_parse_args=True):
     tasks_per_job: int = Field(
         default=1, description="Number of tasks per job"
     )
+    max_number_of_tasks_dispatched = Field(
+        default=1000, description="Maximum number of tasks to be dispatched"
+    )
     group_by: str = Field(default="", description="Field to group data by")
     input_directory: Path = Field(
         default=Path("/data"), description="Input directory"
@@ -163,7 +166,8 @@ def get_input_model_list(
 
 
 def write_input_model_list(
-    input_model_list: list[AnalysisDispatchModel], tasks_per_job: int = 1
+    input_model_list: list[AnalysisDispatchModel], tasks_per_job: int = 1,
+    max_number_of_tasks_dispatched: int = 1000
 ) -> None:
     """
     Distributes a list of input models across a specified number of tasks per job,
@@ -176,6 +180,9 @@ def write_input_model_list(
 
     tasks_per_job: int = 1 : int
         The number of tasks to group per job when dispatching
+    
+    max_number_of_tasks_dispatched: int
+        The maximum number of tasks to dispatch
 
     Returns
     -------
@@ -188,6 +195,7 @@ def write_input_model_list(
     if tasks_per_job < 1:
         raise ValueError("tasks_per_job must be at least 1")
 
+    input_model_list = input_model_list[:max_number_of_tasks_dispatched]
     number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
     tasks_for_each_job = np.array_split(input_model_list, number_of_jobs)
     logger.info(f"Tasks per job: {tasks_per_job}")
