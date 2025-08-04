@@ -197,8 +197,7 @@ def write_input_model_list(
         raise ValueError("tasks_per_job must be at least 1")
 
     logger.info(
-        "Max numbr of tasks to dispatch "
-        f"{max_number_of_tasks_dispatched}"
+        "Max numbr of tasks to dispatch " f"{max_number_of_tasks_dispatched}"
     )
     input_model_list = input_model_list[:max_number_of_tasks_dispatched]
     number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
@@ -306,7 +305,7 @@ if __name__ == "__main__":
     )
 
     write_input_model_list(
-        input_model_list, 
+        input_model_list,
         args.tasks_per_job,
-        args.max_number_of_tasks_dispatched
+        args.max_number_of_tasks_dispatched,
     )
