@@ -33,7 +33,7 @@ class InputSettings(BaseSettings, cli_parse_args=True):
         description=(
             "JSON string of query "
             "for getting data assets or path to query json file",
-        )[0]
+        )[0],
     )
     use_data_asset_csv: int = Field(
         default=0,
@@ -121,7 +121,7 @@ def get_input_model_list(
 
         if not s3_buckets:
             continue
-            
+
         if is_flat:
             for index, s3_bucket in enumerate(s3_buckets):
                 if distributed_analysis_parameters is None:
@@ -166,8 +166,9 @@ def get_input_model_list(
 
 
 def write_input_model_list(
-    input_model_list: list[AnalysisDispatchModel], tasks_per_job: int = 1,
-    max_number_of_tasks_dispatched: int = 1000
+    input_model_list: list[AnalysisDispatchModel],
+    tasks_per_job: int = 1,
+    max_number_of_tasks_dispatched: int = 1000,
 ) -> None:
     """
     Distributes a list of input models across a specified number of tasks per job,
@@ -180,7 +181,7 @@ def write_input_model_list(
 
     tasks_per_job: int = 1 : int
         The number of tasks to group per job when dispatching
-    
+
     max_number_of_tasks_dispatched: int
         The maximum number of tasks to dispatch
 
@@ -242,14 +243,9 @@ def get_data_asset_paths(
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
         data_asset_paths = utils.get_data_asset_ids_from_query(
-            query = {
-                "external_links.Code Ocean.0": {
-                    "$in": data_asset_ids
-                }
-            },
-            group_by=args.group_by
+            query={"external_links.Code Ocean.0": {"$in": data_asset_ids}},
+            group_by=args.group_by,
         )
-
 
     elif docdb_query:
         logger.info("Using query")
@@ -283,7 +279,9 @@ if __name__ == "__main__":
 
     data_asset_paths = get_data_asset_paths(**vars(args))
 
-    analysis_parameters_path = args.input_directory / "analysis_parameters.json"
+    analysis_parameters_path = (
+        args.input_directory / "analysis_parameters.json"
+    )
 
     if analysis_parameters_path.exists():
         with open(analysis_parameters_path, "r") as f:
