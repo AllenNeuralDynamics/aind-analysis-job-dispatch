@@ -57,6 +57,15 @@
 			"value_type": "integer",
 			"default_value": "0",
 			"maximum": 1
+		},
+		{
+			"id": "Y2AHFr3AzTrQGehn",
+			"name": "maximum number of tasks dispatched",
+			"param_name": "max_number_of_tasks_dispatched",
+			"description": "Maximum number of tasks to be dispatched",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "1000"
 		}
 	]
 }

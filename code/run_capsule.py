@@ -48,7 +48,7 @@ class InputSettings(BaseSettings, cli_parse_args=True):
     tasks_per_job: int = Field(
         default=1, description="Number of tasks per job"
     )
-    max_number_of_tasks_dispatched = Field(
+    max_number_of_tasks_dispatched: int = Field(
         default=1000, description="Maximum number of tasks to be dispatched"
     )
     group_by: str = Field(default="", description="Field to group data by")
@@ -182,7 +182,7 @@ def write_input_model_list(
     tasks_per_job: int = 1 : int
         The number of tasks to group per job when dispatching
 
-    max_number_of_tasks_dispatched: int
+    max_number_of_tasks_dispatched: int, Default = 1000
         The maximum number of tasks to dispatch
 
     Returns
@@ -196,6 +196,10 @@ def write_input_model_list(
     if tasks_per_job < 1:
         raise ValueError("tasks_per_job must be at least 1")
 
+    logger.info(
+        "Max number of tasks to dispatch " 
+        f"{max_number_of_tasks_dispatched}"
+    )
     input_model_list = input_model_list[:max_number_of_tasks_dispatched]
     number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
     tasks_for_each_job = np.array_split(input_model_list, number_of_jobs)
@@ -301,4 +305,8 @@ if __name__ == "__main__":
         distributed_analysis_parameters=distributed_parameters,
     )
 
-    write_input_model_list(input_model_list, args.tasks_per_job)
+    write_input_model_list(
+        input_model_list,
+        args.tasks_per_job,
+        args.max_number_of_tasks_dispatched,
+    )
