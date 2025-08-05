@@ -7,16 +7,14 @@ import logging
 import math
 import uuid
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
-from analysis_pipeline_utils.analysis_dispatch_model import (
-    AnalysisDispatchModel,
-)
+from analysis_pipeline_utils.analysis_dispatch_model import \
+    AnalysisDispatchModel
 from analysis_pipeline_utils.utils_analysis_dispatch import (
-    get_data_asset_paths_from_query,
-    get_input_model_list,
-)
+    get_data_asset_paths_from_query, get_input_model_list)
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from tqdm import tqdm
@@ -93,8 +91,7 @@ def write_input_model_list(
         raise ValueError("tasks_per_job must be at least 1")
 
     logger.info(
-        "Max number of tasks to dispatch "
-        f"{max_number_of_tasks_dispatched}"
+        "Max number of tasks to dispatch " f"{max_number_of_tasks_dispatched}"
     )
     input_model_list = input_model_list[:max_number_of_tasks_dispatched]
     number_of_jobs = math.ceil(len(input_model_list) / tasks_per_job)
@@ -117,13 +114,25 @@ def write_input_model_list(
 
 
 def get_data_asset_paths(
-    use_data_asset_csv=False, docdb_query=None, group_by=None, **kwargs
+    use_data_asset_csv: bool = False,
+    docdb_query: Union[str, Path, None] = None,
+    group_by: Union[str, None] = None,
+    **kwargs,
 ) -> list[str]:
     """
     Retrieve a list of data asset paths based on the provided arguments.
 
     Parameters
     ----------
+    use_data_asset_csv: bool, Default False
+        Whether to use a user-provided csv with data asset ids
+
+    docdb_query: Union[str, Path, None], Default None
+        Path to json with query or json string representation
+
+    group_by: Union[str, None], Default None
+        Reference to a single docDB record field to use
+        to group records into jobs. For example 'subject.subject_id
 
     Returns
     -------
