@@ -7,16 +7,15 @@ import logging
 import math
 import uuid
 from pathlib import Path
-from typing import Any, Union
 
 import numpy as np
 import pandas as pd
 from analysis_pipeline_utils.analysis_dispatch_model import (
     AnalysisDispatchModel,
 )
-from analysis_pipeline_utils.utils_analysis_dispatch import(
+from analysis_pipeline_utils.utils_analysis_dispatch import (
     get_data_asset_paths_from_query,
-    get_s3_input_information,
+    get_input_model_list,
 )
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -94,7 +93,7 @@ def write_input_model_list(
         raise ValueError("tasks_per_job must be at least 1")
 
     logger.info(
-        "Max number of tasks to dispatch " 
+        "Max number of tasks to dispatch "
         f"{max_number_of_tasks_dispatched}"
     )
     input_model_list = input_model_list[:max_number_of_tasks_dispatched]
@@ -143,7 +142,7 @@ def get_data_asset_paths(
             raise ValueError("Asset id column is empty")
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
-        data_asset_paths = get_data_asset_ids_from_query(
+        data_asset_paths = get_data_asset_paths_from_query(
             query={"external_links.Code Ocean.0": {"$in": data_asset_ids}},
             group_by=args.group_by,
         )
@@ -163,7 +162,7 @@ def get_data_asset_paths(
             query = json.loads(args.docdb_query)
 
         logger.info(f"Query {query}")
-        data_asset_paths = get_data_asset_ids_from_query(query, group_by)
+        data_asset_paths = get_data_asset_paths_from_query(query, group_by)
 
     logger.info(f"Returned {len(data_asset_paths)} records")
     return data_asset_paths
