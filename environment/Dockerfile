@@ -17,3 +17,6 @@ RUN pip install -U --no-cache-dir \
     pydantic-settings==2.9.1 \
     s3fs==2025.2.0 \
     -e git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils@8a69491c67b79e5dcfb84084513ecba33b0160ed#egg=analysis-pipeline-utils
+
+COPY postInstall /
+RUN /postInstall
