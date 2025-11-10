@@ -14,7 +14,9 @@ import pandas as pd
 from analysis_pipeline_utils.analysis_dispatch_model import \
     AnalysisDispatchModel
 from analysis_pipeline_utils.utils_analysis_dispatch import (
-    get_data_asset_paths_from_query, get_input_model_list)
+    get_data_asset_paths_and_docdb_id_from_query, 
+    get_input_model_list
+)
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from tqdm import tqdm
@@ -118,7 +120,7 @@ def get_data_asset_paths(
     docdb_query: Union[str, Path, None] = None,
     group_by: Union[str, None] = None,
     **kwargs,
-) -> list[str]:
+) -> tuple[list[str]]:
     """
     Retrieve a list of data asset paths based on the provided arguments.
 
@@ -151,7 +153,7 @@ def get_data_asset_paths(
             raise ValueError("Asset id column is empty")
 
         data_asset_ids = data_asset_df["asset_id"].tolist()
-        data_asset_paths = get_data_asset_paths_from_query(
+        data_asset_paths, docdb_ids = get_data_asset_paths_and_docdb_id_from_query(
             query={"external_links.Code Ocean.0": {"$in": data_asset_ids}},
             group_by=args.group_by,
         )
@@ -171,10 +173,10 @@ def get_data_asset_paths(
             query = json.loads(args.docdb_query)
 
         logger.info(f"Query {query}")
-        data_asset_paths = get_data_asset_paths_from_query(query, group_by)
+        data_asset_paths, docdb_ids = get_data_asset_paths_and_docdb_id_from_query(query, group_by)
 
     logger.info(f"Returned {len(data_asset_paths)} records")
-    return data_asset_paths
+    return data_asset_paths, docdb_ids
 
 
 if __name__ == "__main__":
@@ -186,7 +188,7 @@ if __name__ == "__main__":
     args = InputSettings()
     logger.info(args)
 
-    data_asset_paths = get_data_asset_paths(**vars(args))
+    data_asset_paths, docdb_ids = get_data_asset_paths(**vars(args))
 
     analysis_parameters_path = (
         args.input_directory / "analysis_parameters.json"
@@ -206,6 +208,7 @@ if __name__ == "__main__":
 
     input_model_list = get_input_model_list(
         data_asset_paths=data_asset_paths,
+        docdb_record_ids=docdb_ids,
         file_extension=args.file_extension,
         split_files=bool(args.split_files),
         distributed_analysis_parameters=distributed_parameters,
