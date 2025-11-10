@@ -33,8 +33,8 @@
 			"id": "ssE0ZeX5hvqsvvPy",
 			"name": "docDB query",
 			"param_name": "docdb_query",
-			"description": "The query as a json string for fetching data assets, or path to json file containing the query",
-			"help_text": "The query as a dictionary for fetching data assets. Or the path to a json file with the query.",
+			"description": "The query as a json string for fetching data assets, or path to json file containing the query.  Path is /data/input_query.json",
+			"help_text": "The query as a dictionary for fetching data assets. Or the path to a json file with the query. Path is `/data/input_query.json`",
 			"type": "text",
 			"value_type": "string"
 		},
