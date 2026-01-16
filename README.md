@@ -69,7 +69,7 @@ Provide a CSV file with specific data asset IDs:
 
 ### Analysis Dispatch Models
 
-The dispatcher creates **analysis dispatch models** that conform to the [`AnalysisDispatchModel`](https://github.com/AllenNeuralDynamics/analysis-pipeline-utils/blob/main/src/aind_analysis_results/analysis_dispatch_model.py) schema. 
+The dispatcher creates **analysis dispatch models** that conform to the [`AnalysisDispatchModel`](https://github.com/AllenNeuralDynamics/analysis-pipeline-utils/blob/main/src/analysis_pipeline_utils/analysis_dispatch_model.py) schema. 
 
 ### File Structure
 
