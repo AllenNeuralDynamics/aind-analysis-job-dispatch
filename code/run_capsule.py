@@ -49,13 +49,13 @@ class AnalysisDispatchSettings(BaseSettings, cli_parse_args=True):
         default=None,
         description="DocDB record field(s) to group records by",
     )
-    filter_obsolete: Optional[str] = Field(
+    filter_latest: Optional[str] = Field(
         default=None,
-        description="DocDB field to filter obsolete records, keeping only the most recent per group",
+        description="DocDB field to filter latest records, keeping only the most recent per group",
     )
     filter_by: Optional[List[str]] = Field(
         default=None,
-        description="Field(s) to group by when filtering obsolete records",
+        description="Field(s) to group by when filtering latest records",
     )
     unwind_list_fields: Optional[List[str]] = Field(
         default=None,
