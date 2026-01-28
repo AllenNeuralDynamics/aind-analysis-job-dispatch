@@ -14,6 +14,9 @@ from analysis_pipeline_utils.utils_analysis_dispatch import (
 )
 from pydantic import Field
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
