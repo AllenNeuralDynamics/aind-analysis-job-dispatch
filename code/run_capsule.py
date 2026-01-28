@@ -10,11 +10,13 @@ from analysis_pipeline_utils.utils_analysis_dispatch import (
     get_data_asset_records,
     get_input_model_list,
     write_input_model_list,
+    filter_processed_jobs,
 )
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
+
 
 class AnalysisDispatchSettings(BaseSettings, cli_parse_args=True):
     """
@@ -74,6 +76,7 @@ class AnalysisDispatchSettings(BaseSettings, cli_parse_args=True):
         description="Output directory",
     )
 
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -93,7 +96,7 @@ if __name__ == "__main__":
             logger.info(
                 f"Found analysis parameters json file "
                 f"with {len(distributed_parameters)} sets of parameters "
-                "Will compute product over parameters"
+                "Will compute product of data records and parameter sets."
             )
     else:
         distributed_parameters = None
@@ -105,8 +108,10 @@ if __name__ == "__main__":
         distributed_analysis_parameters=distributed_parameters,
     )
 
+    models_to_run = filter_processed_jobs(input_model_list)
+
     write_input_model_list(
-        input_model_list,
+        models_to_run,
         args.tasks_per_job,
         args.max_number_of_tasks_dispatched,
     )
