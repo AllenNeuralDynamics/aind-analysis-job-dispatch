@@ -1,22 +1,21 @@
-# hash:sha256:b0f223ecc188cec5ea2a1d48edf6e2023ae0fd3caea01378f41cdb6bd69bad6a
+# hash:sha256:3fc5b2466614d59fc04b52764d6a96e2996f569421d5e5bbb2ccfc786afcb8f5
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/mambaforge3:24.5.0-0-python3.12.4-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_DEFAULT_REGION
-ARG AWS_SECRET_ACCESS_KEY
-
 ARG GIT_ASKPASS
-ARG GIT_ACCESS_TOKEN
 COPY git-askpass /
 
-RUN pip install -U --no-cache-dir \
+RUN --mount=type=secret,id=git-access-token \
+    GIT_ACCESS_TOKEN="$(cat /run/secrets/git-access-token)" \
+    pip install -U --no-cache-dir \
+    boto3==1.42.30 \
     numpy==1.26.4 \
     pandas==2.1.4 \
     pydantic-settings==2.9.1 \
-    s3fs==2025.2.0 \
-    -e git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils@8a69491c67b79e5dcfb84084513ecba33b0160ed#egg=analysis-pipeline-utils
+    s3fs==2026.1.0 \
+    -e git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils@71c8b040126be8baadba501aa3f6fc62e087aa3d#egg=analysis-pipeline-utils
 
 COPY postInstall /
-RUN /postInstall
+RUN --mount=type=secret,id=secrets . /run/secrets/secrets \
+    && /postInstall
