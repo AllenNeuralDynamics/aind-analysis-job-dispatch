@@ -112,6 +112,7 @@ if __name__ == "__main__":
 
     write_input_model_list(
         models_to_run,
-        args.tasks_per_job,
-        args.max_number_of_tasks_dispatched,
+        output_directory=args.output_directory,
+        tasks_per_job=args.tasks_per_job,
+        max_number_of_tasks_dispatched=args.max_number_of_tasks_dispatched,
     )

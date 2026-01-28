@@ -16,15 +16,7 @@
 				},
 				{
 					"name": "git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils#egg=analysis-pipeline-utils",
-					"version": "71c8b040126be8baadba501aa3f6fc62e087aa3d"
-				},
-				{
-					"name": "numpy",
-					"version": "1.26.4"
-				},
-				{
-					"name": "pandas",
-					"version": "2.1.4"
+					"version": "153b76d2780703a4a69b150e5ce4e5a74a4b68de"
 				},
 				{
 					"name": "pydantic-settings",
