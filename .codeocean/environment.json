@@ -16,7 +16,7 @@
 				},
 				{
 					"name": "git+https://github.com/AllenNeuralDynamics/analysis-pipeline-utils#egg=analysis-pipeline-utils",
-					"version": "db4f879249e50338529aab830b26d94eeff9911e"
+					"version": "5222836b998fef028822fb2e791090691d2ff836"
 				},
 				{
 					"name": "pydantic-settings",
