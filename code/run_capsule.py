@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Optional, List
 from analysis_pipeline_utils.utils_analysis_dispatch import (
     get_data_asset_records,
-    get_input_model_list,
+    expand_task_list,
     write_input_model_list,
-    filter_processed_jobs,
+    check_task_parameters,
 )
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -94,7 +94,9 @@ if __name__ == "__main__":
 
     if analysis_parameters_path.exists():
         with open(analysis_parameters_path, "r") as f:
-            distributed_parameters = json.load(f).get("distributed_parameters")
+            params = json.load(f)
+            fixed_parameters = params.get("fixed_parameters")
+            distributed_parameters = params.get("distributed_parameters")
         if distributed_parameters:
             logger.info(
                 f"Found analysis parameters json file "
@@ -103,15 +105,16 @@ if __name__ == "__main__":
             )
     else:
         distributed_parameters = None
+        fixed_parameters = None
 
-    input_model_list = get_input_model_list(
+    input_model_list = expand_task_list(
         records=records,
         file_extension=args.file_extension,
         split_files=args.split_files,
         distributed_analysis_parameters=distributed_parameters,
     )
 
-    models_to_run = filter_processed_jobs(input_model_list)
+    models_to_run = check_task_parameters(input_model_list, fixed_parameters)
 
     write_input_model_list(
         models_to_run,
