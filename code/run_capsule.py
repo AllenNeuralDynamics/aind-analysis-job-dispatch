@@ -108,7 +108,7 @@ if __name__ == "__main__":
         fixed_parameters = None
 
     input_model_list = expand_task_list(
-        records,
+        records=records,
         file_extension=args.file_extension,
         split_files=args.split_files,
         distributed_analysis_parameters=distributed_parameters,
