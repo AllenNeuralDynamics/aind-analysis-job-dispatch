@@ -70,7 +70,7 @@ class AnalysisDispatchSettings(BaseSettings, cli_parse_args=True):
         description="If True, filter out records where grouping fields are None",
     )
     input_directory: Path = Field(
-        default=Path("/data"),
+        default=Path("/data/input_files"),
         description="Input directory",
     )
     output_directory: Path = Field(
