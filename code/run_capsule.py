@@ -4,6 +4,7 @@ Generates the input analysis model from the user provided query
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Optional, List
 from analysis_pipeline_utils.utils_analysis_dispatch import (
@@ -14,9 +15,7 @@ from analysis_pipeline_utils.utils_analysis_dispatch import (
 )
 from pydantic import Field
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
 
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +113,9 @@ if __name__ == "__main__":
         distributed_analysis_parameters=distributed_parameters,
     )
 
-    models_to_run = check_task_parameters(input_model_list, fixed_parameters)
+    # skip check if just doing a dispatch test run
+    in_pipeline = os.getenv("CO_PIPELINE_ID") is not None
+    models_to_run = check_task_parameters(input_model_list, fixed_parameters, filter_processed=in_pipeline)
 
     write_input_model_list(
         models_to_run,
