@@ -3,18 +3,41 @@
 	"named_parameters": true,
 	"parameters": [
 		{
+			"id": "ssE0ZeX5hvqsvvPy",
+			"name": "docdb_query",
+			"param_name": "docdb_query",
+			"description": "JSON string of query for getting data assets or path to query json file",
+			"help_text": "JSON string of query for getting data assets or path to query json file",
+			"type": "text",
+			"value_type": "string",
+			"default_value": ""
+		},
+		{
+			"id": "v2lGrCkeFIRLrgjl",
+			"name": "use_data_asset_csv",
+			"param_name": "use_data_asset_csv",
+			"description": "Use CSV list of data asset IDs instead of a query",
+			"help_text": "Use CSV list of data asset IDs instead of a query",
+			"type": "text",
+			"value_type": "integer",
+			"default_value": "0",
+			"maximum": 1
+		},
+		{
 			"id": "gMZDHUh0RSOIQ2ri",
-			"name": "filter by extension",
+			"name": "file_extension",
 			"param_name": "file_extension",
-			"description": "Look for the specified file extension in the bucket returned by the query",
+			"description": "Specify file extension filter",
+			"help_text": "Specify file extension filter",
 			"type": "text",
 			"value_type": "string"
 		},
 		{
 			"id": "fBA9180uNtuYPiPF",
-			"name": "split files",
+			"name": "split_files",
 			"param_name": "split_files",
-			"description": "Split vs group the files across jobs if multiple relevant files are found per asset. Default is split",
+			"description": "Whether to split files into separate models",
+			"help_text": "Whether to split files into separate models",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "1",
@@ -22,50 +45,89 @@
 		},
 		{
 			"id": "AsuiaZ4WWTPFPt6f",
-			"name": "tasks per job",
+			"name": "tasks_per_job",
 			"param_name": "tasks_per_job",
-			"description": "The number of tasks per job. Default is 1 task per job. For example, if this is set to 3 and there are 10 tasks, then there will be 4 jobs. ",
+			"description": "Number of tasks per job",
+			"help_text": "Number of tasks per job",
 			"type": "text",
 			"value_type": "integer",
 			"default_value": "1"
 		},
 		{
-			"id": "ssE0ZeX5hvqsvvPy",
-			"name": "docDB query",
-			"param_name": "docdb_query",
-			"description": "The query as a json string for fetching data assets, or path to json file containing the query. ",
-			"help_text": "The query as a dictionary for fetching data assets. Or the path to a json file with the query.",
+			"id": "Y2AHFr3AzTrQGehn",
+			"name": "max_number_of_tasks_dispatched",
+			"param_name": "max_number_of_tasks_dispatched",
+			"description": "Maximum number of tasks to be dispatched",
+			"help_text": "Maximum number of tasks to be dispatched",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "integer",
+			"default_value": "1000"
 		},
 		{
 			"id": "ssE03kp5hvqsvvPy",
-			"name": "docDB group by field",
+			"name": "group_by",
 			"param_name": "group_by",
-			"description": "Reference to a single docDB record field to use to group records into jobs. For example 'subject.subject_id'",
-			"help_text": "Reference to a single docDB record field to use to group records into jobs",
+			"description": "DocDB record field(s) to group records by",
+			"help_text": "DocDB record field(s) to group records by",
 			"type": "text",
 			"value_type": "string"
 		},
 		{
-			"id": "v2lGrCkeFIRLrgjl",
-			"name": "use data asset input from csv",
-			"param_name": "use_data_asset_csv",
-			"description": "Read in list of data asset ids instead of query",
-			"help_text": "Read in a list of data asset ids from predefined csv instead of specifying query",
+			"id": "i8le66HKmr1aDrMw",
+			"name": "filter_latest",
+			"param_name": "filter_latest",
+			"description": "DocDB field to filter latest records, keeping only the most recent per group",
+			"help_text": "DocDB field to filter latest records, keeping only the most recent per group",
 			"type": "text",
-			"value_type": "integer",
-			"default_value": "0",
-			"maximum": 1
+			"value_type": "string"
 		},
 		{
-			"id": "Y2AHFr3AzTrQGehn",
-			"name": "maximum number of tasks dispatched",
-			"param_name": "max_number_of_tasks_dispatched",
-			"description": "Maximum number of tasks to be dispatched",
+			"id": "SUOlQb1cWHyXWdhD",
+			"name": "filter_by",
+			"param_name": "filter_by",
+			"description": "Field(s) to group by when filtering latest records",
+			"help_text": "Field(s) to group by when filtering latest records",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "exuRBuNfsDdllBK8",
+			"name": "unwind_list_fields",
+			"param_name": "unwind_list_fields",
+			"description": "Field(s) to unwind (flatten) before grouping",
+			"help_text": "Field(s) to unwind (flatten) before grouping",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "Qx0ZjlshD4rcTOuC",
+			"name": "drop_null_groups",
+			"param_name": "drop_null_groups",
+			"description": "If True, filter out records where grouping fields are None",
+			"help_text": "If True, filter out records where grouping fields are None",
+			"type": "text",
+			"value_type": "integer",
+			"default_value": "1"
+		},
+		{
+			"id": "lt2MFk6qoasPQXYI",
+			"name": "input_directory",
+			"param_name": "input_directory",
+			"description": "Input directory",
+			"help_text": "Input directory",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "1000"
+			"default_value": "/data"
+		},
+		{
+			"id": "NTdEqSwMvpxpPH5P",
+			"name": "output_directory",
+			"param_name": "output_directory",
+			"description": "Output directory",
+			"help_text": "Output directory",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "/results"
 		}
 	]
 }

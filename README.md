@@ -64,6 +64,9 @@ Provide a CSV file with specific data asset IDs:
   - `--split_files=1`: Create separate jobs for each file (default)
   - `--split_files=0`: Group all files from the same asset into one job
 
+### Query Grouping and Filtering
+
+There are options to specify which docdb field to group by and whether or not to fetch the latest records. See the `group_by` and `filter_latest` records in the app panel
 
 ## Output
 
@@ -77,34 +80,6 @@ For parallelization, the output creates:
 - **One folder per worker** (0, 1, 2, ... up to `num_parallel_workers`)
 - **One JSON file per job** within each worker folder
 - **Unique UUID filenames** for each job
-
-### Analysis Dispatch Model Content
-
-Each analysis dispatch model is a JSON file containing:
-
-```json
-{
-    "s3_location": [
-        "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3"
-    ],
-    "file_location": [
-        "s3://codeocean-s3datasetsbucket-1u41qdg42ur9/50fa9416-4e21-482f-8901-889322a87ae3/nwb/behavior_774659_2025-06-07_14-31-15.nwb"
-    ],
-    "distributed_parameters": [
-        {
-            "param_name": "foo",
-            "param_value": 10,
-            "version": 1.0
-        }
-    ]
-}
-```
-
-**Field Descriptions:**
-- `s3_location`: Base S3 bucket path(s) containing the data asset
-- `file_location`: Specific file path(s) when using file extension filtering
-- `distributed_parameters`: Partial parameter sets from the `analysis_parameters.json` file to run on each data asset
-
 
 ## Integration with Analysis Workflows
 
