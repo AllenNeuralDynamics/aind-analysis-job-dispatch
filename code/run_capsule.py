@@ -69,6 +69,10 @@ class AnalysisDispatchSettings(BaseSettings, cli_parse_args=True):
         default=True,
         description="If True, filter out records where grouping fields are None",
     )
+    docdb_version: str = Field(
+        default="v1",
+        description="Version of aind-data-schema to query in DocDB, v1 or v2"
+    )
     input_directory: Path = Field(
         default=Path("/data/input_files"),
         description="Input directory",
@@ -86,6 +90,7 @@ if __name__ == "__main__":
 
     args = AnalysisDispatchSettings()
     logger.info(args)
+    os.environ["DOCDB_VERSION"] = args.docdb_version
 
     records = get_data_asset_records(**vars(args))
 
