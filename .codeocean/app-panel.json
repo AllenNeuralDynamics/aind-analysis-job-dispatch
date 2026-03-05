@@ -9,8 +9,7 @@
 			"description": "JSON string of query for getting data assets or path to query json file",
 			"help_text": "JSON string of query for getting data assets or path to query json file",
 			"type": "text",
-			"value_type": "string",
-			"default_value": ""
+			"value_type": "string"
 		},
 		{
 			"id": "v2lGrCkeFIRLrgjl",
@@ -117,7 +116,7 @@
 			"help_text": "Input directory",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "/data"
+			"default_value": "/data/input_files"
 		},
 		{
 			"id": "NTdEqSwMvpxpPH5P",
