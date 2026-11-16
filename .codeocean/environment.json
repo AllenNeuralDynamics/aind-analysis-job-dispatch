@@ -12,7 +12,7 @@
 			"packages": [
 				{
 					"name": "analysis-pipeline-utils",
-					"version": "0.2.8"
+					"version": "0.3.0"
 				},
 				{
 					"name": "boto3",
