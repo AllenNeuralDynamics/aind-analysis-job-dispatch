@@ -10,7 +10,7 @@ ENV DOCDB_HOST=api.allenneuraldynamics.org
 ENV CODEOCEAN_DOMAIN=codeocean.allenneuraldynamics.org
 
 RUN pip install -U --no-cache-dir \
-    analysis-pipeline-utils==0.2.8 \
+    analysis-pipeline-utils==0.3.0 \
     boto3==1.42.30 \
     pydantic-settings==2.9.1 \
     s3fs==2026.1.0
